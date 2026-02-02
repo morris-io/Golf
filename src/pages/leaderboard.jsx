@@ -14,6 +14,7 @@ export default function Leaderboard() {
 
   const token =
     typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
@@ -24,11 +25,11 @@ export default function Leaderboard() {
     setLoading(true);
     setError('');
     try {
-      const resScores = await fetch(`/api/scores/${leagueId}`, { headers });
+      const resScores = await fetch(`${apiUrl}/api/scores/${leagueId}`, { headers });
       if (!resScores.ok) throw new Error('Failed to refresh scores');
 
       const resBoard = await fetch(
-        `/api/leagues/${leagueId}/leaderboard`,
+        `${apiUrl}/api/leagues/${leagueId}/leaderboard`,
         { headers }
       );
       if (!resBoard.ok) {
@@ -113,7 +114,6 @@ export default function Leaderboard() {
               <tbody className="divide-y divide-gray-100">
                 {standings.map((s, i) => (
                   <React.Fragment key={s.userId}>
-                    {/* main row */}
                     <tr
                       onClick={() => toggle(s.userId)}
                       className="cursor-pointer hover:bg-gray-100 transition-colors duration-150"

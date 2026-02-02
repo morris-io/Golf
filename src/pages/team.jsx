@@ -13,16 +13,16 @@ export default function Team() {
   const pollRef = useRef(null);
 
   const token = typeof window !== 'undefined' && localStorage.getItem('token');
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
   };
 
-  /* GET /api/leagues/:id/team */
   const fetchTeam = async () => {
     if (!leagueId) return;
     try {
-      const res  = await fetch(`/api/leagues/${leagueId}/team`, { headers });
+      const res  = await fetch(`${apiUrl}/api/leagues/${leagueId}/team`, { headers });
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Error fetching team');
 
@@ -34,12 +34,11 @@ export default function Team() {
     }
   };
 
-  /* sync latest scores for league, then reload team */
   const refreshScores = async () => {
     if (!leagueId) return;
     setRefreshing(true);
     try {
-      const res = await fetch(`/api/scores/${leagueId}`, { headers });
+      const res = await fetch(`${apiUrl}/api/scores/${leagueId}`, { headers });
       if (!res.ok) throw new Error('Failed to refresh scores');
       await fetchTeam();
     } catch (err) {
@@ -52,9 +51,7 @@ export default function Team() {
 
   const startPolling = () => {
     if (pollRef.current == null) {
-      // initial sync immediately
       refreshScores();
-      // subsequent syncs every 2 minutes
       pollRef.current = setInterval(refreshScores, 2 * 60 * 1000);
     }
   };
@@ -66,13 +63,11 @@ export default function Team() {
     }
   };
 
-  // Set up polling 
   useEffect(() => {
     if (!leagueId) return;
 
     startPolling();
 
-    // Pause polling when away
     const handleVisibilityChange = () => {
       if (document.hidden) {
         stopPolling();
@@ -109,7 +104,6 @@ export default function Team() {
             {refreshing ? 'Refreshing…' : 'Refresh Scores'}
           </button>
 
-          {/* Team list */}
           <ul className="flex flex-col gap-4">
             {team.map((p, idx) => (
               <li

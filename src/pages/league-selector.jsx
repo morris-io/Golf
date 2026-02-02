@@ -13,16 +13,16 @@ export default function LeagueSelector() {
   const [loading, setLoading]         = useState(false);
 
   const token = typeof window !== 'undefined' && localStorage.getItem('token');
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
   };
 
-  // Helpers 
   const fetchLeagues = async () => {
     setError('');
     try {
-      const res  = await fetch('/api/leagues', { headers });
+      const res  = await fetch(`${apiUrl}/api/leagues`, { headers });
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Could not load leagues');
       setLeagues(data.leagues);
@@ -35,7 +35,6 @@ export default function LeagueSelector() {
     fetchLeagues();
   }, []);
 
-  // Create league 
   const handleCreate = async () => {
     setError('');
     setLoading(true);
@@ -45,7 +44,7 @@ export default function LeagueSelector() {
         teamCount,
         cutHandling,
       });
-      const res  = await fetch('/api/leagues', {
+      const res  = await fetch(`${apiUrl}/api/leagues`, {
         method: 'POST',
         headers,
         body,
@@ -60,13 +59,12 @@ export default function LeagueSelector() {
     }
   };
 
-  // Join league 
   const handleJoin = async e => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const res  = await fetch('/api/leagues/join', {
+      const res  = await fetch(`${apiUrl}/api/leagues/join`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ leagueId: joinId.trim() }),
@@ -81,12 +79,11 @@ export default function LeagueSelector() {
     }
   };
 
-  // Leave league 
   const handleLeave = async id => {
     if (!confirm('Are you sure you want to leave this league?')) return;
     setError('');
     try {
-      const res  = await fetch(`/api/leagues/${id}/leave`, {
+      const res  = await fetch(`${apiUrl}/api/leagues/${id}/leave`, {
         method: 'POST',
         headers,
       });
@@ -98,7 +95,6 @@ export default function LeagueSelector() {
     }
   };
 
-  // Render 
   return (
     <Layout>
       <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-2xl">
@@ -163,7 +159,6 @@ export default function LeagueSelector() {
           </button>
         </div>
 
-        {/* Join */}
         <form onSubmit={handleJoin} className="flex space-x-2 mb-10">
           <input
             type="text"
@@ -181,7 +176,6 @@ export default function LeagueSelector() {
           </button>
         </form>
 
-        {/* user leagues */}
         <h2 className="text-xl font-semibold mb-4">My Leagues</h2>
         <ul className="space-y-4">
           {leagues.map(lg => (
