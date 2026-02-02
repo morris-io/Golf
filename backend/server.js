@@ -32,10 +32,10 @@ if (!FRONTEND_URL) {
 app.use(helmet());
 
 const allowedOrigins = [
-  FRONTEND_URL,                      
-  "https://www.fantasyfairway.com",  
-  "https://fantasyfairway.com",     
-  "http://localhost:3000"            
+  FRONTEND_URL,
+  "https://www.fantasyfairway.com",
+  "https://fantasyfairway.com",
+  "http://localhost:3000"
 ];
 
 app.use(
@@ -47,8 +47,8 @@ app.use(
         return callback(null, true);
       }
       
-      console.error(`Blocked by CORS: ${incomingOrigin}`);
-      return callback(new Error('Not allowed by CORS'));
+      console.log(`Blocked CORS: ${incomingOrigin}`);
+      callback(new Error(`CORS policy: origin ${incomingOrigin} not allowed`));
     },
     optionsSuccessStatus: 200
   })
@@ -73,8 +73,6 @@ app.use('/api', apiLimiter);
 
 app.use(hpp());
 
-app.get('/', (req, res) => res.send('API is running...'));
-
 app.use('/api/scores', scoresRoutes);
 app.use('/api/leagues', draftRoutes);
 app.use('/api/leagues', teamRoutes);
@@ -90,4 +88,6 @@ app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
-  .catch((err) => console.error('❌ MongoDB connection error:', err));
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+  });

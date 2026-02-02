@@ -21,8 +21,10 @@ export default function Auth() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const url = `${apiUrl}/api/auth/${isLogin ? 'login' : 'register'}`;
     
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/${isLogin ? 'login' : 'register'}`;
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -51,15 +53,13 @@ export default function Auth() {
       router.push(destination);
     } catch (err) {
       console.error(err);
-      setError('Server error');
+      setError('Server error. Please try again.');
     }
   };
 
   return (
     <Layout>
-      {/* card */}
       <div className="max-w-md mx-auto mt-8 p-8 bg-white shadow-lg rounded-2xl">
-        {/* Logo in place of the heading */}
         <div className="flex justify-center mb-2">
           <img
             src="images/titlelogo.jpg"
@@ -68,7 +68,6 @@ export default function Auth() {
           />
         </div>
 
-        
         <h2
           className={`font-semibold mb-4 text-center text-[#1E4151] ${
             isLogin ? 'text-sm' : 'text-sm'
