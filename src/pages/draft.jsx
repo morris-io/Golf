@@ -46,7 +46,8 @@ export default function Draft() {
   }, [order, picks, leagueDetails]);
 
   const available = useMemo(() => {
-    const picked = new Set(picks.map(p => p.golfer));
+    // Convert every picked ID to a String so it matches the API list
+    const picked = new Set(picks.map(p => String(p.golfer)));
     return field.filter(g => !picked.has(g.id));
   }, [field, picks]);
 

@@ -39,6 +39,7 @@ export default function LeagueSelector() {
     setError('');
     setLoading(true);
     try {
+      const finalName = leagueName.trim() || "My League";
       const body = JSON.stringify({
         name:        leagueName.trim(),
         teamCount,

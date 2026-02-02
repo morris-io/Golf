@@ -84,6 +84,7 @@ export default function Auth() {
             <input
               type="text"
               name="username"
+              maxLength="15"
               value={formData.username}
               onChange={handleChange}
               required
