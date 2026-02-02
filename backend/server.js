@@ -31,25 +31,22 @@ if (!FRONTEND_URL) {
 
 app.use(helmet());
 
-// CORS CONFIGURATION
 const allowedOrigins = [
-  FRONTEND_URL,                      // e.g. https://www.fantasyfairway.com
-  "https://www.fantasyfairway.com",  // Explicit allow
-  "https://fantasyfairway.com",      // Explicit allow
-  "http://localhost:3000"            // Allow local development
+  FRONTEND_URL,                      
+  "https://www.fantasyfairway.com",  
+  "https://fantasyfairway.com",     
+  "http://localhost:3000"            
 ];
 
 app.use(
   cors({
     origin: (incomingOrigin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!incomingOrigin) return callback(null, true);
       
       if (allowedOrigins.includes(incomingOrigin)) {
         return callback(null, true);
       }
       
-      // LOG THE BLOCKED ORIGIN FOR DEBUGGING
       console.error(`Blocked by CORS: ${incomingOrigin}`);
       return callback(new Error('Not allowed by CORS'));
     },
@@ -60,7 +57,6 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// NoSQL injection 
 const { sanitize } = mongoSanitize;
 app.use((req, res, next) => {
   if (req.body) req.body = sanitize(req.body);
@@ -68,7 +64,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// 100 requests per 15 minutes per IP
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -78,7 +73,6 @@ app.use('/api', apiLimiter);
 
 app.use(hpp());
 
-// Health Check (Good for debugging 502s)
 app.get('/', (req, res) => res.send('API is running...'));
 
 app.use('/api/scores', scoresRoutes);
@@ -91,10 +85,8 @@ app.use('/api/golfers', golferRoutes);
 
 app.use(celebrateErrors());
 
-// Start listening immediately
 app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));
 
-// Connect to MongoDB separately
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
