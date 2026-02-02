@@ -13,7 +13,7 @@ export default function Team() {
   const pollRef = useRef(null);
 
   const token = typeof window !== 'undefined' && localStorage.getItem('token');
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,

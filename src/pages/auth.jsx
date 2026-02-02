@@ -22,7 +22,7 @@ export default function Auth() {
     e.preventDefault();
     setError('');
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const url = `${apiUrl}/api/auth/${isLogin ? 'login' : 'register'}`;
     
     try {

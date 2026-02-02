@@ -13,7 +13,7 @@ export default function LeagueSelector() {
   const [loading, setLoading]         = useState(false);
 
   const token = typeof window !== 'undefined' && localStorage.getItem('token');
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,

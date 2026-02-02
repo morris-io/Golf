@@ -14,7 +14,7 @@ export default function Leaderboard() {
 
   const token =
     typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
