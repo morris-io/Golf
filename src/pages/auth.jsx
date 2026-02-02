@@ -21,8 +21,8 @@ export default function Auth() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    const url = `/api/auth/${isLogin ? 'login' : 'register'}`;
+    
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/${isLogin ? 'login' : 'register'}`;
     try {
       const res = await fetch(url, {
         method: 'POST',
