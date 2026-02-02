@@ -31,21 +31,27 @@ if (!FRONTEND_URL) {
 
 app.use(helmet());
 
-// CORS
+// CORS CONFIGURATION
 const allowedOrigins = [
-  FRONTEND_URL,
-  FRONTEND_URL.startsWith('https://')
-    ? FRONTEND_URL.replace('https://', 'https://www.')
-    : FRONTEND_URL
+  FRONTEND_URL,                      // e.g. https://www.fantasyfairway.com
+  "https://www.fantasyfairway.com",  // Explicit allow
+  "https://fantasyfairway.com",      // Explicit allow
+  "http://localhost:3000"            // Allow local development
 ];
+
 app.use(
   cors({
     origin: (incomingOrigin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
       if (!incomingOrigin) return callback(null, true);
+      
       if (allowedOrigins.includes(incomingOrigin)) {
         return callback(null, true);
       }
-      callback(new Error(`CORS policy: origin ${incomingOrigin} not allowed`));
+      
+      // LOG THE BLOCKED ORIGIN FOR DEBUGGING
+      console.error(`Blocked by CORS: ${incomingOrigin}`);
+      return callback(new Error('Not allowed by CORS'));
     },
     optionsSuccessStatus: 200
   })
@@ -72,6 +78,9 @@ app.use('/api', apiLimiter);
 
 app.use(hpp());
 
+// Health Check (Good for debugging 502s)
+app.get('/', (req, res) => res.send('API is running...'));
+
 app.use('/api/scores', scoresRoutes);
 app.use('/api/leagues', draftRoutes);
 app.use('/api/leagues', teamRoutes);
@@ -82,13 +91,11 @@ app.use('/api/golfers', golferRoutes);
 
 app.use(celebrateErrors());
 
+// Start listening immediately
+app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));
+
+// Connect to MongoDB separately
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log(' MongoDB connected');
-    app.listen(PORT, () => console.log(` Server listening on port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error(' MongoDB connection error:', err);
-    process.exit(1);
-  });
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
