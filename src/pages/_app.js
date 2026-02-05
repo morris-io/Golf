@@ -9,7 +9,7 @@ function MyApp({ Component, pageProps }) {
         <meta name="description" content="The ultimate fantasy golf drafting app" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta name="theme-color" content="#22c55e" />
+        <meta name="theme-color" content="#ABE2F6" />
       </Head>
       <Component {...pageProps} />
     </>
