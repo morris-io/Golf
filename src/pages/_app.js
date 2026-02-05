@@ -1,9 +1,19 @@
+import Head from 'next/head';
 import '../styles/globals.css';
 
-export default function MyApp({ Component, pageProps }) {
+function MyApp({ Component, pageProps }) {
   return (
-    <div className="bg-blue-50 min-h-screen p-6">
+    <>
+      <Head>
+        <title>Fantasy Fairway</title>
+        <meta name="description" content="The ultimate fantasy golf drafting app" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <meta name="theme-color" content="#22c55e" />
+      </Head>
       <Component {...pageProps} />
-    </div>
+    </>
   );
 }
+
+export default MyApp;
