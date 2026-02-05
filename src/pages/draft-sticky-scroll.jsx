@@ -73,7 +73,7 @@ export default function Draft() {
     } catch {
       const ta = document.createElement('textarea');
       ta.value = url;
-      ta.style.position = 'fixed';   
+      ta.style.position = 'fixed';  
       ta.style.top = '-9999px';
       document.body.appendChild(ta);
       ta.select();
@@ -211,7 +211,7 @@ export default function Draft() {
     whiteSpace: 'nowrap',
     transition: 'all 0.2s',
     boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-    marginTop: '1rem', 
+    marginTop: '1rem',
     cursor: 'pointer',
   };
 
@@ -237,18 +237,11 @@ export default function Draft() {
 
   return (
     <Layout>
-      <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg mx-auto space-y-6">
-        <div className="flex flex-col items-center py-3">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Draft Room</h1>
-          
-          {tournamentName && (
-            <p className="text-green-600 font-bold text-sm uppercase tracking-wider mb-2">
-              {tournamentName}
-            </p>
-          )}
+      <div className="bg-white md:rounded-xl shadow-lg max-w-lg mx-auto min-h-screen flex flex-col">
+        <div className="flex flex-col items-center py-4 px-6 bg-white rounded-t-xl">
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">Draft Room</h1>
 
           <div className="flex flex-wrap justify-center gap-3 w-full">
-            
             <button
               onClick={isComplete ? null : copyLink}
               disabled={isComplete}
@@ -269,83 +262,100 @@ export default function Draft() {
           </div>
         </div>
 
-        <div>
-          <h2 className="text-med font-semibold mb-2">Results</h2>
-          {picks.length === 0 ? (
-            <p className="text-gray-500 text-center">No picks yet.</p>
-          ) : (
-            <ul className="flex space-x-3 overflow-x-auto px-1">
-              {picks
-                .slice()
-                .reverse()
-                .map((p, idx) => (
-                  <li
-                    key={idx}
-                    className="min-w-[10rem] bg-gray-50 rounded-lg p-3 shadow text-center"
-                  >
-                    <span className="block text-sm font-medium mb-1">
-                      {p.golferName}
-                    </span>
-                    <span className="text-xs text-gray-600">
-                      Pick {p.pickNo} • {userMap[p.user] || p.user}
-                    </span>
-                  </li>
-                ))}
-            </ul>
+        <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm px-4 pt-2 pb-3 space-y-3">
+          
+          {tournamentName && (
+            <div className="text-center">
+               <span className="text-xs font-bold uppercase text-green-600 tracking-wider">
+                {tournamentName}
+              </span>
+            </div>
           )}
+
+          <div>
+            {picks.length === 0 ? (
+               <p className="text-xs text-gray-400 text-center italic">Waiting for first pick...</p>
+            ) : (
+              <ul className="flex space-x-2 overflow-x-auto no-scrollbar pb-1">
+                {picks
+                  .slice()
+                  .reverse()
+                  .map((p, idx) => (
+                    <li
+                      key={idx}
+                      className="min-w-[8rem] bg-gray-50 border border-gray-100 rounded p-2 text-center flex-shrink-0"
+                    >
+                      <span className="block text-xs font-bold text-gray-800 truncate">
+                        {p.golferName}
+                      </span>
+                      <span className="block text-[10px] text-gray-500 truncate">
+                        #{p.pickNo} • {userMap[p.user] || p.user}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+
+          {upcoming.length > 0 && (
+             <div>
+               <ul className="flex space-x-2 overflow-x-auto no-scrollbar">
+                 {upcoming.map((uid, idx) => (
+                   <li
+                     key={idx}
+                     className={`min-w-[5rem] py-1 px-2 text-center rounded text-xs font-medium flex-shrink-0 ${
+                       idx === 0 
+                         ? 'bg-green-100 text-green-800 border border-green-200' 
+                         : 'bg-gray-50 text-gray-500 border border-gray-100'
+                     }`}
+                   >
+                     <span className="truncate block">
+                       {userMap[uid] || uid}
+                     </span>
+                   </li>
+                 ))}
+               </ul>
+             </div>
+          )}
+
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search golfers…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-3 pr-3 py-1.5 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-green-500 bg-gray-50"
+            />
+          </div>
         </div>
 
-        <div>
-          <h2 className="text-med font-semibold mb-2">
-            Upcoming Picks
+        <div className="flex-1 p-4 bg-gray-50">
+          <h2 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
+            Available Golfers
           </h2>
-          <ul className="flex space-x-3 overflow-x-auto px-1">
-            {upcoming.map((uid, idx) => (
-              <li
-                key={idx}
-                className={`min-w-[6rem] py-2 px-3 text-center rounded-lg ${
-                  idx === 0 ? 'bg-green-200' : 'bg-gray-100'
-                }`}
-              >
-                {userMap[uid] || uid}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h2 className="text-med font-semibold mb-2">Available Golfers</h2>
-
-          <input
-            type="text"
-            placeholder="Search golfers…"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full mb-4 px-3 py-1 rounded-full border-2 border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-
+          
           {filtered.length === 0 ? (
-            <p className="text-gray-500">There is no PGA Tournament this weekend</p>
+            <p className="text-gray-500 text-center py-8">No golfers found.</p>
           ) : (
-            <ul className="space-y-4">
+            <ul className="space-y-3 pb-20">
               {filtered.map(g => (
                 <li
                   key={g.id}
-                  className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3 shadow"
+                  className="flex justify-between items-center bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-100"
                 >
-                  <span className="font-medium text-gray-800">{g.name}</span>
+                  <span className="font-medium text-gray-800 text-sm">{g.name}</span>
                   <button
                     onClick={() => makePick(g.id, g.name)}
                     disabled={
                       !leagueReady || order[picks.length] !== userId || loadingPick
                     }
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                    className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wide transition ${
                       leagueReady && order[picks.length] === userId
-                        ? 'bg-green-500 hover:bg-green-600 text-white'
-                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    {loadingPick ? 'Picking…' : 'Pick'}
+                    {loadingPick ? '...' : 'Pick'}
                   </button>
                 </li>
               ))}
