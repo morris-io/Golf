@@ -1,7 +1,7 @@
 {
     "name": "Fantasy Fairway",
     "short_name": "FantasyFairway",
-    "theme_color": "#FFFFFF",
+    "theme_color": "#8DD0EF",
     "background_color": "#ffffff",
     "display": "standalone",
     "orientation": "portrait",
