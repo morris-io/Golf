@@ -8,10 +8,11 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // This helps prevent memory crashes during build
-  eslint: {
-    ignoreDuringBuilds: true,
+  // 1. ADD THIS LINE to silence the Turbopack error:
+  turbopack: {
+     // This tells Next.js it's okay to use Turbopack even though PWA is installed
   },
+  // 2. WE DELETED THE 'eslint' BLOCK because it is no longer allowed here.
 };
 
 module.exports = withPWA(nextConfig);
