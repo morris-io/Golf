@@ -1,7 +1,7 @@
 import { getLeaderboard } from '../../../services/sportContentApiFree';
 
-let fieldCache = null;
-let fieldCacheAt = 0;
+let cacheData = null;
+let cacheAt = 0;
 const CACHE_TTL = 24 * 60 * 60 * 1000; 
 
 export default async function handler(req, res) {
@@ -11,12 +11,16 @@ export default async function handler(req, res) {
 
   try {
     const now = Date.now();
-    if (fieldCache && now - fieldCacheAt < CACHE_TTL) {
-       return res.status(200).json({ field: fieldCache });
+    
+    if (cacheData && now - cacheAt < CACHE_TTL) {
+       return res.status(200).json(cacheData);
     }
 
     const lb = await getLeaderboard();
     const event = lb.events?.[0];
+    
+    const tournamentName = event?.tournament?.displayName || event?.name || 'PGA Tournament';
+    
     const competitors = event?.competitions?.[0]?.competitors || [];
 
     const field = competitors.map(c => ({
@@ -24,10 +28,10 @@ export default async function handler(req, res) {
       name: c.athlete.displayName || c.athlete.shortName || c.athlete.fullName,
     }));
 
-    fieldCache = field;
-    fieldCacheAt = now;
+    cacheData = { field, tournamentName };
+    cacheAt = now;
 
-    res.status(200).json({ field });
+    res.status(200).json(cacheData);
   } catch (err) {
     console.error('ESPN fetch failed:', err.message);
     res.status(500).json({ msg: 'Unable to load tournament data' });

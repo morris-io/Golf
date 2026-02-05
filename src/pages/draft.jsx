@@ -6,9 +6,11 @@ export default function Draft() {
   const router = useRouter();
   const { leagueId } = router.query;
 
-  const [field,         setField]         = useState([]);
-  const [loadingField,  setLoadingField]  = useState(true);
-  const [fieldError,    setFieldError]    = useState('');
+  const [field,          setField]          = useState([]);
+  const [loadingField,   setLoadingField]   = useState(true);
+  const [fieldError,     setFieldError]     = useState('');
+  
+  const [tournamentName, setTournamentName] = useState('');
 
   const [picks,         setPicks]         = useState([]);
   const [order,         setOrder]         = useState([]);
@@ -46,7 +48,6 @@ export default function Draft() {
   }, [order, picks, leagueDetails]);
 
   const available = useMemo(() => {
-    // Convert every picked ID to a String so it matches the API list
     const picked = new Set(picks.map(p => String(p.golfer)));
     return field.filter(g => !picked.has(g.id));
   }, [field, picks]);
@@ -72,7 +73,7 @@ export default function Draft() {
     } catch {
       const ta = document.createElement('textarea');
       ta.value = url;
-      ta.style.position = 'fixed';   // avoid scrolling to bottom
+      ta.style.position = 'fixed';   
       ta.style.top = '-9999px';
       document.body.appendChild(ta);
       ta.select();
@@ -118,6 +119,10 @@ export default function Draft() {
       const data = await res.json();
       if (!res.ok) throw new Error('Could not load golfer list.');
       setField(data.field || []);
+      
+      if (data.tournamentName) {
+        setTournamentName(data.tournamentName);
+      }
     } catch (err) {
       setFieldError(err.message);
     } finally {
@@ -209,11 +214,9 @@ export default function Draft() {
   return (
     <Layout>
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg mx-auto space-y-6">
-        {/* HEADER */}
         <div className="flex flex-col items-center py-3 bg-gradient-to-r from-green-500 to-green-300 rounded-lg">
           <h1 className="text-2xl font-bold text-white mb-3">Draft Room</h1>
 
-          {/* single button slot */}
           {!isComplete ? (
             <button
               onClick={copyLink}
@@ -229,9 +232,16 @@ export default function Draft() {
               View My Team
             </button>
           )}
+
+          {tournamentName && (
+            <div className="mt-3 px-4 py-1 bg-white/20 rounded-lg">
+              <p className="text-white font-bold text-sm uppercase tracking-wider">
+                {tournamentName}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* RESULTS slider */}
         <div>
           <h2 className="text-med font-semibold mb-2">Results</h2>
           {picks.length === 0 ? (
@@ -258,7 +268,6 @@ export default function Draft() {
           )}
         </div>
 
-        {/* UPCOMING picks slider */}
         <div>
           <h2 className="text-med font-semibold mb-2">
             Upcoming Picks
@@ -277,11 +286,9 @@ export default function Draft() {
           </ul>
         </div>
 
-        {/* AVAILABLE golfers */}
         <div>
           <h2 className="text-med font-semibold mb-2">Available Golfers</h2>
 
-          {/* SEARCH */}
           <input
             type="text"
             placeholder="Search golfers…"

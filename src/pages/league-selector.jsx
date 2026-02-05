@@ -1,16 +1,20 @@
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 
 export default function LeagueSelector() {
   const router = useRouter();
-  const [leagues, setLeagues]         = useState([]);
-  const [leagueName, setLeagueName]   = useState('');
-  const [teamCount, setTeamCount]     = useState(1);
-  const [cutHandling, setCutHandling] = useState('standard');
-  const [joinId, setJoinId]           = useState('');
-  const [error, setError]             = useState('');
-  const [loading, setLoading]         = useState(false);
+  const [leagues, setLeagues]               = useState([]);
+  const [leagueName, setLeagueName]         = useState('');
+  const [teamCount, setTeamCount]           = useState(1);
+  const [cutHandling, setCutHandling]       = useState('standard');
+  const [joinId, setJoinId]                 = useState('');
+  const [error, setError]                   = useState('');
+  const [loading, setLoading]               = useState(false);
+  
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [tournamentName, setTournamentName] = useState('');
 
   const token = typeof window !== 'undefined' && localStorage.getItem('token');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -31,8 +35,21 @@ export default function LeagueSelector() {
     }
   };
 
+  const fetchTournamentInfo = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/api/golfers/current`);
+      const data = await res.json();
+      if (res.ok && data.tournamentName) {
+        setTournamentName(data.tournamentName);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchLeagues();
+    fetchTournamentInfo();
   }, []);
 
   const handleCreate = async () => {
@@ -41,7 +58,7 @@ export default function LeagueSelector() {
     try {
       const finalName = leagueName.trim() || "My League";
       const body = JSON.stringify({
-        name:        leagueName.trim(),
+        name:        finalName,
         teamCount,
         cutHandling,
       });
@@ -99,67 +116,91 @@ export default function LeagueSelector() {
   return (
     <Layout>
       <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-2xl">
-        <div className="flex justify-center mb-0 mt-0">
+        <div className="flex flex-col items-center mb-6 mt-0">
           <img
             src="/images/leagueslogo.png"
             alt="Fantasy Fairway"
-            className="h-20 w-46"
+            className="h-20 w-46 mb-2"
           />
+          {tournamentName && (
+            <p className="text-lg text-center font-semibold text-gray-700">
+              Draft now for the <span className="text-green-600 ">{tournamentName}</span>
+            </p>
+          )}
         </div>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        <label className="block text-lg font-semibold mb-7 pt-2">
+            Create a league
+        </label>
+        <div className="mb-6 border-b border-gray-200 pb-6">
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="w-full flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition mb-4"
+          >
+            <span>League Settings</span>
+            <span>{showCreateForm ? '▲' : '▼'}</span>
+          </button>
 
-        <div className="space-y-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              League Name
-            </label>
-            <input
-              type="text"
-              placeholder="Enter league name"
-              value={leagueName}
-              onChange={e => setLeagueName(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Number of Teams
-            </label>
-            <select
-              value={teamCount}
-              onChange={e => setTeamCount(Number(e.target.value))}
-              className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
-            >
-              {[1, 2, 3, 4, 5, 6].map(n => (
-                <option key={n} value={n}>
-                  {n === 1 ? 'Demo (1 Team)' : `${n} Teams`}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cut Handling
-            </label>
-            <select
-              value={cutHandling}
-              onChange={e => setCutHandling(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
-            >
-              <option value="standard">Standard Scoring</option>
-              <option value="cap">Cap at Cut Score</option>
-            </select>
-          </div>
+          {showCreateForm && (
+            <div className="mb-4 space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100 animate-fade-in">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  League Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter league name"
+                  value={leagueName}
+                  onChange={e => setLeagueName(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Number of Teams
+                </label>
+                <select
+                  value={teamCount}
+                  onChange={e => setTeamCount(Number(e.target.value))}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  {[1, 2, 3, 4, 5, 6].map(n => (
+                    <option key={n} value={n}>
+                      {n === 1 ? 'Demo (1 Team)' : `${n} Teams`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cut Handling
+                </label>
+                <select
+                  value={cutHandling}
+                  onChange={e => setCutHandling(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  <option value="standard">Standard Scoring</option>
+                  <option value="cap">Cap at Cut Score</option>
+                </select>
+              </div>
+            </div>
+          )}
+          
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition disabled:opacity-50"
+            className="w-full py-3 mb-2 mt-1 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition disabled:opacity-50"
           >
-            {loading ? 'Working…' : 'New League'}
+            {loading ? 'Working…' : 'Start Draft'}
           </button>
         </div>
 
+        <label className="block text-lg font-semibold mb-7 pt-">
+            Join a league
+        </label>
+        
         <form onSubmit={handleJoin} className="flex space-x-2 mb-10">
           <input
             type="text"
@@ -177,7 +218,7 @@ export default function LeagueSelector() {
           </button>
         </form>
 
-        <h2 className="text-xl font-semibold mb-4">My Leagues</h2>
+        <h2 className="text-lg font-semibold mb-4">Past Leagues</h2>
         <ul className="space-y-4">
           {leagues.map(lg => (
             <li
