@@ -33,17 +33,21 @@ export default function BottomNav() {
     setTimeout(() => window.location.reload(), 50);
   };
 
+
   const leaderboardHref = !isLoggedIn
     ? '/auth'
     : recentLeagueId
       ? `/leaderboard?leagueId=${recentLeagueId}`
       : '/leaderboard';
 
+
+  const leaguesHref = !isLoggedIn ? '/auth' : '/league-selector';
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 h-16 z-50 flex justify-around items-center shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
       
       <Link 
-        href="/league-selector"
+        href={leaguesHref}
         className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-green-600 active:text-green-700"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
