@@ -120,7 +120,7 @@ export default function LeagueSelector() {
           <img
             src="/images/leagueslogo.png"
             alt="Fantasy Fairway"
-            className="h-20 w-46 mb-2"
+            className="h- w-44 mb-8 pt-4 "
           />
           {tournamentName && (
             <p className="text-lg text-center font-semibold text-gray-700">
@@ -130,7 +130,7 @@ export default function LeagueSelector() {
         </div>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        <label className="block text-lg font-semibold mb-7 pt-2">
+        <label className="block text-lg font-semibold mb-7 pt-">
             Create a league
         </label>
         <div className="mb-6 border-b border-gray-200 pb-6">

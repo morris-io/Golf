@@ -121,7 +121,7 @@ export default function Leaderboard() {
              <img
                 src="/images/leagueslogo.png"
                 alt="Fantasy Fairway"
-                className="h-20 w-46 mb-2"
+                className="h- w-44 mb-8 pt-4"
               />
             <h2 className="text-xl font-bold text-gray-800">Select a League</h2>
             <p className="text-gray-500 text-sm mt-1">
