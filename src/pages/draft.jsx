@@ -259,7 +259,7 @@ export default function Draft() {
 
             <button
               onClick={() => {
-                if (isComplete) router.push(`/team?leagueId=${leagueId}`);
+                if (isComplete) router.push(`/leaderboard?leagueId=${leagueId}`);
               }}
               disabled={!isComplete}
               style={!isComplete ? disabledStyle : buttonBaseStyle}

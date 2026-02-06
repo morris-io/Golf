@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
@@ -58,9 +57,10 @@ export default function LeagueSelector() {
     try {
       const finalName = leagueName.trim() || "My League";
       const body = JSON.stringify({
-        name:        finalName,
+        name: finalName,
         teamCount,
         cutHandling,
+        tournamentName: tournamentName 
       });
       const res  = await fetch(`${apiUrl}/api/leagues`, {
         method: 'POST',
@@ -228,7 +228,9 @@ export default function LeagueSelector() {
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold">{lg.name}</h3>
-                  <p className="text-sm text-gray-600">Code: {lg.code}</p>
+                   {lg.tournamentName && (
+                    <p className="text-xs text-green-600 font-medium">{lg.tournamentName}</p>
+                   )}
                 </div>
                 <button
                   onClick={() => handleLeave(lg._id)}
@@ -245,10 +247,10 @@ export default function LeagueSelector() {
                   Draft
                 </button>
                 <button
-                  onClick={() => router.push(`/team?leagueId=${lg._id}`)}
+                  onClick={() => router.push(`/leaderboard?leagueId=${lg._id}`)}
                   className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-center"
                 >
-                  My Team
+                  Leaderboard
                 </button>
               </div>
             </li>

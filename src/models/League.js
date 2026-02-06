@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const LeagueSchema = new mongoose.Schema({
   name: { type: String, default: 'My League'},
+  tournamentName: { type: String }, 
   admin: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   teamCount: { type: Number, default: 4 }, 

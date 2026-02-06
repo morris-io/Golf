@@ -6,17 +6,38 @@ export default function BottomNav() {
   const router = useRouter();
   const { leagueId } = router.query;
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [recentLeagueId, setRecentLeagueId] = useState('');
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem('token'));
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+
+    const storedLeague = localStorage.getItem('recentLeagueId');
+    if (storedLeague) {
+      setRecentLeagueId(storedLeague);
+    }
   }, []);
+
+  useEffect(() => {
+    if (leagueId) {
+      localStorage.setItem('recentLeagueId', leagueId);
+      setRecentLeagueId(leagueId);
+    }
+  }, [leagueId]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
+    localStorage.removeItem('recentLeagueId'); 
     router.push('/auth');
     setTimeout(() => window.location.reload(), 50);
   };
+
+  const leaderboardHref = !isLoggedIn
+    ? '/auth'
+    : recentLeagueId
+      ? `/leaderboard?leagueId=${recentLeagueId}`
+      : '/leaderboard';
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 h-16 z-50 flex justify-around items-center shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
@@ -37,7 +58,7 @@ export default function BottomNav() {
       </Link>
 
       <Link 
-        href={leagueId ? `/leaderboard?leagueId=${leagueId}` : '/league-selector'}
+        href={leaderboardHref}
         className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-green-600 active:text-green-700"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
