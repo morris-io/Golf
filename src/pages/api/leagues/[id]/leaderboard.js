@@ -46,7 +46,6 @@ async function handler(req, res) {
 
     const allGolferIds = (league.picks || []).map(p => p.golferId);
     
-    // Safety check: only query DB if we actually have golfer IDs
     let scoreDocs = [];
     if (allGolferIds.length > 0) {
         scoreDocs = await Score.find({ 

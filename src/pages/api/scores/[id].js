@@ -20,7 +20,7 @@ async function handler(req, res) {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); 
+      const timeoutId = setTimeout(() => controller.abort(), 4000); 
 
       const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard', {
         signal: controller.signal

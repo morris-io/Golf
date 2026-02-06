@@ -46,10 +46,15 @@ export default function Leaderboard() {
     if (!leagueId) return;
     setLoading(true);
     setError('');
-    try {
-      const resScores = await fetch(`${apiUrl}/api/scores/${leagueId}`, { headers });
-      if (!resScores.ok) throw new Error('Failed to refresh scores');
 
+
+    try {
+      await fetch(`${apiUrl}/api/scores/${leagueId}`, { headers });
+    } catch (updateErr) {
+      console.warn('Score update failed, proceeding to load cached data:', updateErr);
+    }
+
+    try {
       const resBoard = await fetch(
         `${apiUrl}/api/leagues/${leagueId}/leaderboard`,
         { headers }
