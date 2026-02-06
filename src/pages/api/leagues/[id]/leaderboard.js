@@ -24,7 +24,9 @@ async function handler(req, res) {
     const userMap = {};
     if (league.members) {
       league.members.forEach(u => {
-        userMap[u._id.toString()] = u.username;
+        if (u && u._id) {
+            userMap[u._id.toString()] = u.username;
+        }
       });
     }
 
@@ -43,10 +45,15 @@ async function handler(req, res) {
     }
 
     const allGolferIds = (league.picks || []).map(p => p.golferId);
-    const scoreDocs = await Score.find({ 
-      league: id,
-      golferId: { $in: allGolferIds } 
-    }).lean();
+    
+    // Safety check: only query DB if we actually have golfer IDs
+    let scoreDocs = [];
+    if (allGolferIds.length > 0) {
+        scoreDocs = await Score.find({ 
+            league: id,
+            golferId: { $in: allGolferIds } 
+        }).lean();
+    }
 
     const scoreMap = scoreDocs.reduce((map, doc) => {
       map[doc.golferId] = doc.strokes;
