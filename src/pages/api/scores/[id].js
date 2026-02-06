@@ -72,7 +72,7 @@ async function handler(req, res) {
            }
         }
 
-        return { golferId: gid, strokes: finalStrokes };
+        return { golferId: gid, strokes: finalStrokes, status: statusName };
       });
 
     } catch (fetchError) {
@@ -86,6 +86,7 @@ async function handler(req, res) {
           update: { 
             $set: { 
               strokes: s.strokes, 
+              status: s.status,
               lastUpdated: new Date() 
             } 
           },

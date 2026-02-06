@@ -240,8 +240,11 @@ export default function Leaderboard() {
                                 key={p.golferId}
                                 className="flex justify-between py-2 text-sm"
                               >
-                                <span className="text-gray-600">{p.name}</span>
-                                <span className={`font-mono font-medium ${p.strokes < 0 ? 'text-red-600' : p.strokes > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
+                                <span className={p.status === 'STATUS_CUT' ? 'text-red-700 font-medium' : 'text-gray-600'}>
+                                  {p.name}
+                                </span>
+
+                                <span className={`font-mono font-medium ${p.strokes < -2 ? 'text-blue-800' : p.strokes > 3 ? 'text-red-700' : 'text-gray-500'}`}>
                                   {p.strokes > 0 ? `+${p.strokes}` : p.strokes}
                                 </span>
                               </li>

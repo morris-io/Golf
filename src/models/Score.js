@@ -5,13 +5,14 @@ const ScoreSchema = new mongoose.Schema({
   golferId: { type: Number, required: true },
   golferName: String,
   rank: String,
-  total: String, // e.g. "-5", "E", "+2"
+  total: String, 
   thru: String,
   round1: String,
   round2: String,
   round3: String,
   round4: String,
   strokes: Number, 
+  status: String,
   lastUpdated: { type: Date, default: Date.now }
 });
 

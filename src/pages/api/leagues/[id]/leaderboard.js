@@ -56,14 +56,15 @@ async function handler(req, res) {
     }
 
     const scoreMap = scoreDocs.reduce((map, doc) => {
-      map[doc.golferId] = doc.strokes;
+      map[doc.golferId] = { strokes: doc.strokes, status: doc.status };
       return map;
     }, {});
 
     const standings = Object.entries(picksByUser).map(([uid, picks]) => {
       const totalStrokes = picks.reduce(
         (sum, p) => {
-          const s = scoreMap[p.golferId];
+          const data = scoreMap[p.golferId];
+          const s = data ? data.strokes : 0;
           return sum + (typeof s === 'number' ? s : 0);
         },
         0
@@ -73,11 +74,16 @@ async function handler(req, res) {
         userId:       uid,
         username:     userMap[uid] || 'Unknown',
         totalStrokes,
-        picks: picks.map(p => ({
-          golferId: p.golferId,
-          name:     p.name,
-          strokes:  scoreMap[p.golferId] ?? '—'
-        }))
+        picks: picks.map(p => {
+          const data = scoreMap[p.golferId];
+          
+          return {
+            golferId: p.golferId,
+            name:     p.name,
+            strokes:  data?.strokes ?? '—',
+            status:   data?.status
+          };
+        })
       };
     })
     .sort((a, b) => a.totalStrokes - b.totalStrokes);
