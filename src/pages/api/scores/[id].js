@@ -16,44 +16,60 @@ async function handler(req, res) {
     if (!league) return res.status(404).json({ msg: 'League not found' });
 
     const golferIds = (league.picks || []).map(p => p.golferId);
+    let scores = [];
 
-    const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard');
-    if (!response.ok) throw new Error('Failed to fetch ESPN data');
-    
-    const data = await response.json();
-    const event = data.events?.[0];
-    const comps = event?.competitions?.[0]?.competitors || [];
-    const tournament = event?.tournament;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
-    const rawCut = tournament?.cutScore;
-    const cutActive =
-      league.cutHandling === 'cap' &&
-      typeof rawCut === 'number' &&
-      rawCut > 0 &&
-      Boolean(tournament?.cutComplete);
-    const cutScore = cutActive ? rawCut : null;
+      const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard', {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-    const scores = golferIds.map(gid => {
-      const c = comps.find(cmp => cmp.athlete.id.toString() === gid.toString());
-      
-      const stat = c?.statistics?.find(s => s.name === 'scoreToPar');
-      
-      let toPar = null;
-      if (stat && typeof stat.value === 'number') {
-        toPar = stat.value;
-      } else if (c?.score?.displayValue) {
-        const val = parseInt(c.score.displayValue, 10);
-        if (!isNaN(val)) toPar = val;
-        if (c.score.displayValue === 'E') toPar = 0;
+      if (!response.ok) {
+        throw new Error(`ESPN API returned status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      const event = data.events?.[0];
+      const comps = event?.competitions?.[0]?.competitors || [];
+      const tournament = event?.tournament;
 
-      let finalStrokes = toPar;
-      if (cutScore != null && toPar != null && toPar > cutScore) {
-        finalStrokes = cutScore;
-      }
+      const rawCut = tournament?.cutScore;
+      const cutActive =
+        league.cutHandling === 'cap' &&
+        typeof rawCut === 'number' &&
+        rawCut > 0 &&
+        Boolean(tournament?.cutComplete);
+      const cutScore = cutActive ? rawCut : null;
 
-      return { golferId: gid, strokes: finalStrokes };
-    });
+      scores = golferIds.map(gid => {
+        const c = comps.find(cmp => cmp.athlete.id.toString() === gid.toString());
+        
+        const stat = c?.statistics?.find(s => s.name === 'scoreToPar');
+        
+        let toPar = null;
+        if (stat && typeof stat.value === 'number') {
+          toPar = stat.value;
+        } else if (c?.score?.displayValue) {
+          const val = parseInt(c.score.displayValue, 10);
+          if (!isNaN(val)) toPar = val;
+          if (c.score.displayValue === 'E') toPar = 0;
+        }
+
+        let finalStrokes = toPar;
+        if (cutScore != null && toPar != null && toPar > cutScore) {
+          finalStrokes = cutScore;
+        }
+
+        return { golferId: gid, strokes: finalStrokes };
+      });
+
+    } catch (fetchError) {
+      console.warn('Warning: Skipped score update due to external API error:', fetchError.message);
+
+    }
 
     if (scores.length > 0) {
       const bulk = scores.map(s => ({
@@ -73,7 +89,7 @@ async function handler(req, res) {
 
     res.status(200).json({ scores });
   } catch (err) {
-    console.error('Scores Update Error:', err);
+    console.error('Scores Critical Error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 }
