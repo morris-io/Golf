@@ -213,6 +213,7 @@ export default function Draft() {
     boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
     marginTop: '1rem', 
     cursor: 'pointer',
+    flex: 1
   };
 
   const disabledStyle = {
@@ -239,10 +240,10 @@ export default function Draft() {
     <Layout>
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg mx-auto space-y-6">
         <div className="flex flex-col items-center py-3">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Draft Room</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2 mt-2">Draft Room</h1>
           
           {tournamentName && (
-            <p className="text-green-600 font-bold text-sm uppercase tracking-wider mb-2">
+            <p className="text-green-800 font-bold text-sm uppercase tracking-wider mb-2">
               {tournamentName}
             </p>
           )}
