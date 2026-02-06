@@ -170,7 +170,7 @@ export default function Leaderboard() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="px-6 py-4 bg-green-600 relative flex items-center justify-center">
+        <div className="px-6 py-4 bg-[#1A6B31] relative flex items-center justify-center">
           <button
             onClick={() => router.push('/leaderboard')}
             className="absolute left-4 text-green-100 hover:text-white transition p-1 rounded-full hover:bg-green-700"

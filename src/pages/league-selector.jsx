@@ -124,7 +124,7 @@ export default function LeagueSelector() {
           />
           {tournamentName && (
             <p className="text-lg text-center font-semibold text-gray-700">
-              Draft now for the <span className="text-green-600 ">{tournamentName}</span>
+              Draft now for the <span className="text-[#1A6B31] ">{tournamentName}</span>
             </p>
           )}
         </div>
@@ -191,7 +191,7 @@ export default function LeagueSelector() {
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="w-full py-3 mb-2 mt-1 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition disabled:opacity-50"
+            className="w-full py-3 mb-2 mt-1 bg-[#1A6B31] hover:bg-green-950 text-white rounded-lg font-semibold transition disabled:opacity-50"
           >
             {loading ? 'Working…' : 'Start Draft'}
           </button>
@@ -212,7 +212,7 @@ export default function LeagueSelector() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold flex-shrink-0 transition disabled:opacity-50"
+            className="px-6 py-2 bg-purple-800 hover:bg-purple-950 text-white rounded-lg font-semibold flex-shrink-0 transition disabled:opacity-50"
           >
             {loading ? '…' : 'Join'}
           </button>
@@ -229,7 +229,7 @@ export default function LeagueSelector() {
                 <div>
                   <h3 className="font-semibold">{lg.name}</h3>
                    {lg.tournamentName && (
-                    <p className="text-xs text-green-600 font-medium">{lg.tournamentName}</p>
+                    <p className="text-xs text-[#1A6B31] font-medium">{lg.tournamentName}</p>
                    )}
                 </div>
                 <button
@@ -242,13 +242,13 @@ export default function LeagueSelector() {
               <div className="flex space-x-2">
                 <button
                   onClick={() => router.push(`/draft?leagueId=${lg._id}`)}
-                  className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-center"
+                  className="flex-1 py-2 bg-purple-800 hover:bg-purple-950 text-white rounded-lg text-center"
                 >
                   Draft
                 </button>
                 <button
                   onClick={() => router.push(`/leaderboard?leagueId=${lg._id}`)}
-                  className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-center"
+                  className="flex-1 py-2 bg-[#1A6B31] hover:bg-green-700 text-white rounded-lg text-center"
                 >
                   Leaderboard
                 </button>
