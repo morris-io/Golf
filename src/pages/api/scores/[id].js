@@ -37,18 +37,15 @@ async function handler(req, res) {
       const tournament = event?.tournament;
 
       const rawCut = tournament?.cutScore;
-      const cutActive =
-        league.cutHandling === 'cap' &&
-        typeof rawCut === 'number' &&
-        rawCut > 0 &&
-        Boolean(tournament?.cutComplete);
-      const cutScore = cutActive ? rawCut : null;
+      const cutRound = tournament?.cutRound || 0; 
+      
+      const useCutCap = league.cutHandling === 'cap' && typeof rawCut === 'number' && rawCut > 0;
+      const cutScore = useCutCap ? rawCut : null;
 
       scores = golferIds.map(gid => {
         const c = comps.find(cmp => cmp.athlete.id.toString() === gid.toString());
         
         const stat = c?.statistics?.find(s => s.name === 'scoreToPar');
-        
         let toPar = null;
         if (stat && typeof stat.value === 'number') {
           toPar = stat.value;
@@ -58,9 +55,21 @@ async function handler(req, res) {
           if (c.score.displayValue === 'E') toPar = 0;
         }
 
+        const statusName = c?.status?.type?.name; 
+
         let finalStrokes = toPar;
-        if (cutScore != null && toPar != null && toPar > cutScore) {
-          finalStrokes = cutScore;
+
+        if (useCutCap && toPar !== null && cutScore !== null && cutRound >= 3) {
+             
+           if (statusName === 'STATUS_CUT') {
+              finalStrokes = toPar; 
+           }
+           
+           else if (statusName === 'STATUS_IN_PROGRESS' || statusName === 'STATUS_SCHEDULED') {
+              if (toPar > cutScore) {
+                 finalStrokes = cutScore;
+              }
+           }
         }
 
         return { golferId: gid, strokes: finalStrokes };
@@ -68,7 +77,6 @@ async function handler(req, res) {
 
     } catch (fetchError) {
       console.warn('Warning: Skipped score update due to external API error:', fetchError.message);
-
     }
 
     if (scores.length > 0) {

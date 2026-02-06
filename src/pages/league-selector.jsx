@@ -193,7 +193,7 @@ export default function LeagueSelector() {
             disabled={loading}
             className="w-full py-3 mb-2 mt-1 bg-[#1A6B31] hover:bg-green-950 text-white rounded-lg font-semibold transition disabled:opacity-50"
           >
-            {loading ? 'Working…' : 'Start Draft'}
+            {loading ? 'Working…' : 'Enter Draft Room'}
           </button>
         </div>
 
