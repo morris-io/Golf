@@ -1,6 +1,7 @@
 import dbConnect from '../../../../lib/dbConnect';
 import League from '../../../../models/League';
 import Score from '../../../../models/Score';
+import User from '../../../../models/User';
 import auth from '../../../../lib/auth';
 
 async function handler(req, res) {
@@ -25,7 +26,7 @@ async function handler(req, res) {
     if (league.members) {
       league.members.forEach(u => {
         if (u && u._id) {
-            userMap[u._id.toString()] = u.username;
+          userMap[u._id.toString()] = u.username;
         }
       });
     }
@@ -48,10 +49,10 @@ async function handler(req, res) {
     
     let scoreDocs = [];
     if (allGolferIds.length > 0) {
-        scoreDocs = await Score.find({ 
-            league: id,
-            golferId: { $in: allGolferIds } 
-        }).lean();
+      scoreDocs = await Score.find({ 
+        league: id,
+        golferId: { $in: allGolferIds } 
+      }).lean();
     }
 
     const scoreMap = scoreDocs.reduce((map, doc) => {
