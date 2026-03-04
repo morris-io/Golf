@@ -183,9 +183,11 @@ export default function Leaderboard() {
             <h1 className="text-white text-xl font-semibold">
               {currentLeague?.name || 'Leaderboard'}
             </h1>
-            <p className="text-green-200 text-xs uppercase tracking-wider mt-0.5">
-              Live Standings
-            </p>
+            {currentLeague?.tournamentName && (
+              <p className="text-green-100 text-sm font-medium">
+                {currentLeague.tournamentName}
+              </p>
+            )}
           </div>
         </div>
 
