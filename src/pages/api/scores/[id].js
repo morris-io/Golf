@@ -39,7 +39,7 @@ async function handler(req, res) {
       const rawCut = tournament?.cutScore;
       const cutRound = tournament?.cutRound || 0; 
       
-      const useCutCap = league.cutHandling === 'cap' && typeof rawCut === 'number' && rawCut > 0;
+      const useCutCap = league.cutHandling === 'cap' && typeof rawCut === 'number';
       const cutScore = useCutCap ? rawCut : null;
 
       scores = golferIds.map(gid => {
@@ -64,8 +64,7 @@ async function handler(req, res) {
            if (statusName === 'STATUS_CUT') {
               finalStrokes = toPar; 
            }
-           
-           else if (statusName === 'STATUS_IN_PROGRESS' || statusName === 'STATUS_SCHEDULED') {
+           else {
               if (toPar > cutScore) {
                  finalStrokes = cutScore;
               }
