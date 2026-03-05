@@ -18,13 +18,31 @@ async function handler(req, res) {
       return res.status(404).json({ msg: 'League not found' });
     }
 
-
     const maxPicks = league.members.length * 4;
     if (!league.draftOrder || league.draftOrder.length < maxPicks) {
-      const memberIds = league.members.map(m => m.toString());
-      league.draftOrder = Array.from({ length: maxPicks }, (_, i) =>
-        memberIds[i % memberIds.length]
-      );
+      // 1. Get the list of member IDs
+      let memberIds = league.members.map(m => m.toString());
+
+      // 2. Randomize the initial order (Fisher-Yates Shuffle)
+      for (let i = memberIds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [memberIds[i], memberIds[j]] = [memberIds[j], memberIds[i]];
+      }
+
+      // 3. Create the serpentine (snake) order
+      const rounds = 4; 
+      let fullOrder = [];
+
+      for (let round = 0; round < rounds; round++) {
+        // Even rounds (0, 2) go forward; Odd rounds (1, 3) go backward
+        const roundOrder = (round % 2 === 0) 
+          ? [...memberIds] 
+          : [...memberIds].reverse();
+          
+        fullOrder = fullOrder.concat(roundOrder);
+      }
+
+      league.draftOrder = fullOrder;
     }
 
     const pickIndex = league.picks.length;
