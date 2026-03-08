@@ -46,29 +46,26 @@ async function handler(req, res) {
     }
 
     const allGolferIds = (league.picks || []).map(p => p.golferId);
-    
+
     let scoreDocs = [];
     if (allGolferIds.length > 0) {
-      scoreDocs = await Score.find({ 
+      scoreDocs = await Score.find({
         league: id,
-        golferId: { $in: allGolferIds } 
+        golferId: { $in: allGolferIds }
       }).lean();
     }
 
     const scoreMap = scoreDocs.reduce((map, doc) => {
-      map[doc.golferId] = { strokes: doc.strokes, status: doc.status };
+      map[doc.golferId] = { strokes: doc.strokes, status: doc.status, capped: doc.capped };
       return map;
     }, {});
 
     const standings = Object.entries(picksByUser).map(([uid, picks]) => {
-      const totalStrokes = picks.reduce(
-        (sum, p) => {
-          const data = scoreMap[p.golferId];
-          const s = data ? data.strokes : 0;
-          return sum + (typeof s === 'number' ? s : 0);
-        },
-        0
-      );
+      const totalStrokes = picks.reduce((sum, p) => {
+        const data = scoreMap[p.golferId];
+        const s = data ? data.strokes : 0;
+        return sum + (typeof s === 'number' ? s : 0);
+      }, 0);
 
       return {
         userId:       uid,
@@ -76,12 +73,12 @@ async function handler(req, res) {
         totalStrokes,
         picks: picks.map(p => {
           const data = scoreMap[p.golferId];
-          
           return {
             golferId: p.golferId,
             name:     p.name,
             strokes:  data?.strokes ?? '—',
-            status:   data?.status
+            status:   data?.status,
+            capped:   data?.capped ?? false,
           };
         })
       };

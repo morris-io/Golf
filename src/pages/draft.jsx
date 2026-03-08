@@ -338,10 +338,12 @@ export default function Draft() {
                   <button
                     onClick={() => makePick(g.id, g.name)}
                     disabled={
-                      !leagueReady || order[picks.length] !== userId || loadingPick
+                      !leagueReady || 
+                      loadingPick || 
+                      String(order[picks.length]) !== String(userId) 
                     }
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-                      leagueReady && order[picks.length] === userId
+                      leagueReady && String(order[picks.length]) === String(userId)
                         ? 'bg-green-500 hover:bg-green-600 text-white'
                         : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     }`}

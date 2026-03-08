@@ -11,7 +11,7 @@ export default function Leaderboard() {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
   const [openUser, setOpenUser]   = useState(null);
-  const [leagues, setLeagues]     = useState([]); 
+  const [leagues, setLeagues]     = useState([]);
 
   const token =
     typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -24,9 +24,7 @@ export default function Leaderboard() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const myId = localStorage.getItem('userId');
-      if (myId) {
-        setOpenUser(myId);
-      }
+      if (myId) setOpenUser(myId);
     }
   }, []);
 
@@ -34,9 +32,7 @@ export default function Leaderboard() {
     try {
       const res = await fetch(`${apiUrl}/api/leagues`, { headers });
       const data = await res.json();
-      if (res.ok) {
-        setLeagues(data.leagues || []);
-      }
+      if (res.ok) setLeagues(data.leagues || []);
     } catch (err) {
       console.error('Failed to fetch leagues:', err);
     }
@@ -46,7 +42,6 @@ export default function Leaderboard() {
     if (!leagueId) return;
     setLoading(true);
     setError('');
-
 
     try {
       await fetch(`${apiUrl}/api/scores/${leagueId}`, { headers });
@@ -81,22 +76,15 @@ export default function Leaderboard() {
     let pollId;
 
     const startPolling = () => {
-      if (!pollId) {
-        pollId = setInterval(refreshLeaderboard, 2 * 60 * 1000);
-      }
+      if (!pollId) pollId = setInterval(refreshLeaderboard, 2 * 60 * 1000);
     };
-
     const stopPolling = () => {
       clearInterval(pollId);
       pollId = null;
     };
-
     const handleVisibility = () => {
-      if (document.hidden) {
-        stopPolling();
-      } else {
-        startPolling();
-      }
+      if (document.hidden) stopPolling();
+      else startPolling();
     };
 
     refreshLeaderboard();
@@ -110,23 +98,29 @@ export default function Leaderboard() {
   }, [leagueId]);
 
   const toggle = (uid) => setOpenUser(openUser === uid ? null : uid);
-
   const currentLeague = leagues.find(l => l._id === leagueId);
+
+  function scoreColorClass(p) {
+    if (p.capped)            return 'text-red-700';
+     if (typeof p.strokes === 'number') {
+      if (p.strokes < -2)    return 'text-blue-800';
+      if (p.strokes > 2)     return 'text-red-700';
+    }
+    return 'text-gray-500';
+  }
 
   if (!leagueId) {
     return (
       <Layout>
         <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-2xl">
           <div className="flex flex-col items-center mb-6">
-             <img
-                src="/images/leagueslogo.png"
-                alt="Fantasy Fairway"
-                className="h- w-44 mb-8 pt-4"
-              />
+            <img
+              src="/images/leagueslogo.png"
+              alt="Fantasy Fairway"
+              className="h- w-44 mb-8 pt-4"
+            />
             <h2 className="text-xl font-bold text-gray-800">Select a League</h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Choose a leaderboard to view
-            </p>
+            <p className="text-gray-500 text-sm mt-1">Choose a leaderboard to view</p>
           </div>
 
           <div className="space-y-3">
@@ -151,15 +145,15 @@ export default function Leaderboard() {
                 </button>
               ))
             ) : (
-               <div className="text-center py-6">
-                 <p className="text-gray-500 mb-4">You haven't joined any leagues yet.</p>
-                 <button
-                    onClick={() => router.push('/league-selector')}
-                    className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
-                 >
-                   Join or Create a League
-                 </button>
-               </div>
+              <div className="text-center py-6">
+                <p className="text-gray-500 mb-4">You haven't joined any leagues yet.</p>
+                <button
+                  onClick={() => router.push('/league-selector')}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
+                >
+                  Join or Create a League
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -178,7 +172,7 @@ export default function Leaderboard() {
           >
             <ArrowLeftIcon className="w-6 h-6" />
           </button>
-          
+
           <div className="text-center">
             <h1 className="text-white text-xl font-semibold">
               {currentLeague?.name || 'Leaderboard'}
@@ -193,23 +187,15 @@ export default function Leaderboard() {
 
         <div className="p-6">
           {loading && <p className="text-center py-4 text-gray-500">Loading scores…</p>}
-          {error && (
-            <p className="text-red-500 text-center py-4">Error: {error}</p>
-          )}
+          {error && <p className="text-red-500 text-center py-4">Error: {error}</p>}
 
           {!loading && !error && (
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    #
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Player
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -222,11 +208,10 @@ export default function Leaderboard() {
                       <td className="px-4 py-3 text-gray-600">{i + 1}</td>
                       <td className="px-4 py-3 flex items-center justify-between text-gray-800 font-medium">
                         <span>{s.username}</span>
-                        {openUser === s.userId ? (
-                          <ChevronDownIcon className="w-5 h-5 text-gray-400" />
-                        ) : (
-                          <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-                        )}
+                        {openUser === s.userId
+                          ? <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+                          : <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                        }
                       </td>
                       <td className="px-4 py-3 font-bold text-gray-900">
                         {s.totalStrokes}
@@ -238,17 +223,26 @@ export default function Leaderboard() {
                         <td colSpan={3} className="bg-gray-50 px-4 py-3 shadow-inner">
                           <ul className="divide-y divide-gray-200">
                             {s.picks.map((p) => (
-                              <li
-                                key={p.golferId}
-                                className="flex justify-between py-2 text-sm"
-                              >
+                              <li key={p.golferId} className="flex justify-between items-center py-2 text-sm">
                                 <span className={p.status === 'STATUS_CUT' ? 'text-red-700 font-medium' : 'text-gray-600'}>
                                   {p.name}
+                                  {p.status === 'STATUS_CUT' && (
+                                    <span className="ml-1 text-xs font-semibold uppercase">(CUT)</span>
+                                  )}
                                 </span>
 
-                                <span className={`font-mono font-medium ${p.strokes < -2 ? 'text-blue-800' : p.strokes > 3 ? 'text-red-700' : 'text-gray-500'}`}>
-                                  {p.strokes > 0 ? `+${p.strokes}` : p.strokes}
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  {p.capped && (
+                                    <span className="text-[10px] font-bold uppercase tracking-wide bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded">
+                                      CAP
+                                    </span>
+                                  )}
+                                  <span className={`font-mono font-medium ${scoreColorClass(p)}`}>
+                                    {typeof p.strokes === 'number'
+                                      ? p.strokes > 0 ? `+${p.strokes}` : p.strokes
+                                      : p.strokes}
+                                  </span>
+                                </div>
                               </li>
                             ))}
                           </ul>

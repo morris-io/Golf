@@ -20,7 +20,7 @@ async function handler(req, res) {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); 
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
       const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard', {
         signal: controller.signal
@@ -30,48 +30,54 @@ async function handler(req, res) {
       if (!response.ok) {
         throw new Error(`ESPN API returned status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      const event = data.events?.[0];
-      const comps = event?.competitions?.[0]?.competitors || [];
-      const tournament = event?.tournament;
+      const event        = data.events?.[0];
+      const competition  = event?.competitions?.[0];
+      const comps        = competition?.competitors || [];
+      const tournament   = event?.tournament;
 
       const rawCut = tournament?.cutScore;
-      const cutRound = tournament?.cutRound || 0; 
-      
-      const useCutCap = league.cutHandling === 'cap' && typeof rawCut === 'number';
+
+      const cutRound       = tournament?.cutRound ?? 2;
+      const currentPeriod  = competition?.status?.period ?? 1;
+      const cutHasHappened = currentPeriod > cutRound;
+
+      const useCutCap = league.cutHandling === 'cap'
+        && typeof rawCut === 'number'
+        && cutHasHappened;
+
       const cutScore = useCutCap ? rawCut : null;
 
       scores = golferIds.map(gid => {
         const c = comps.find(cmp => cmp.athlete.id.toString() === gid.toString());
-        
+
         const stat = c?.statistics?.find(s => s.name === 'scoreToPar');
         let toPar = null;
         if (stat && typeof stat.value === 'number') {
           toPar = stat.value;
         } else if (c?.score?.displayValue) {
-          const val = parseInt(c.score.displayValue, 10);
-          if (!isNaN(val)) toPar = val;
-          if (c.score.displayValue === 'E') toPar = 0;
+          if (c.score.displayValue === 'E') {
+            toPar = 0;
+          } else {
+            const val = parseInt(c.score.displayValue, 10);
+            if (!isNaN(val)) toPar = val;
+          }
         }
 
-        const statusName = c?.status?.type?.name; 
+        const statusName = c?.status?.type?.name;
 
         let finalStrokes = toPar;
+        let capped = false;
 
-        if (useCutCap && toPar !== null && cutScore !== null && cutRound >= 3) {
-             
-           if (statusName === 'STATUS_CUT') {
-              finalStrokes = toPar; 
-           }
-           else {
-              if (toPar > cutScore) {
-                 finalStrokes = cutScore;
-              }
-           }
+        if (useCutCap && toPar !== null) {
+          if (statusName !== 'STATUS_CUT' && toPar > cutScore) {
+            finalStrokes = cutScore;
+            capped = true;
+          }
         }
 
-        return { golferId: gid, strokes: finalStrokes, status: statusName };
+        return { golferId: gid, strokes: finalStrokes, status: statusName, capped };
       });
 
     } catch (fetchError) {
@@ -81,13 +87,14 @@ async function handler(req, res) {
     if (scores.length > 0) {
       const bulk = scores.map(s => ({
         updateOne: {
-          filter: { golferId: s.golferId, league: id }, 
-          update: { 
-            $set: { 
-              strokes: s.strokes, 
-              status: s.status,
-              lastUpdated: new Date() 
-            } 
+          filter: { golferId: s.golferId, league: id },
+          update: {
+            $set: {
+              strokes: s.strokes,
+              status:  s.status,
+              capped:  s.capped,
+              lastUpdated: new Date()
+            }
           },
           upsert: true,
         },

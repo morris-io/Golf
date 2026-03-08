@@ -13,6 +13,7 @@ const ScoreSchema = new mongoose.Schema({
   round4: String,
   strokes: Number, 
   status: String,
+  capped: { type: Boolean, default: false },
   lastUpdated: { type: Date, default: Date.now }
 });
 

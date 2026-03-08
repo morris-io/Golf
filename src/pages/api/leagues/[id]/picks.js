@@ -8,85 +8,63 @@ async function handler(req, res) {
   }
 
   await dbConnect();
-
   const { id } = req.query;
   const { golferId, golferName } = req.body;
 
   try {
     const league = await League.findById(id);
-    if (!league) {
-      return res.status(404).json({ msg: 'League not found' });
-    }
+    if (!league) return res.status(404).json({ msg: 'League not found' });
 
     const maxPicks = league.members.length * 4;
-    if (!league.draftOrder || league.draftOrder.length < maxPicks) {
-      // 1. Get the list of member IDs
-      let memberIds = league.members.map(m => m.toString());
 
-      // 2. Randomize the initial order (Fisher-Yates Shuffle)
+    // Use existing order or generate if somehow missing
+    if (!league.draftOrder || league.draftOrder.length < maxPicks) {
+      let memberIds = league.members.map(m => m.toString());
       for (let i = memberIds.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [memberIds[i], memberIds[j]] = [memberIds[j], memberIds[i]];
       }
-
-      // 3. Create the serpentine (snake) order
-      const rounds = 4; 
       let fullOrder = [];
-
-      for (let round = 0; round < rounds; round++) {
-        // Even rounds (0, 2) go forward; Odd rounds (1, 3) go backward
-        const roundOrder = (round % 2 === 0) 
-          ? [...memberIds] 
-          : [...memberIds].reverse();
-          
+      for (let round = 0; round < 4; round++) {
+        const roundOrder = (round % 2 === 0) ? [...memberIds] : [...memberIds].reverse();
         fullOrder = fullOrder.concat(roundOrder);
       }
-
       league.draftOrder = fullOrder;
+      await league.save();
     }
 
     const pickIndex = league.picks.length;
-    
-    if (pickIndex >= maxPicks) {
-      return res.status(400).json({ msg: 'Draft is complete' });
-    }
+    if (pickIndex >= maxPicks) return res.status(400).json({ msg: 'Draft complete' });
 
+    // Comparison: Both should be strings
     const currentPickerId = league.draftOrder[pickIndex].toString();
-    const requestingUserId = req.user.id;
-
-    if (currentPickerId !== requestingUserId) {
+    if (currentPickerId !== req.user.id) {
       return res.status(403).json({ msg: 'Not your turn' });
     }
 
-    const isTaken = league.picks.some(p => p.golferId === golferId);
-    if (isTaken) {
+    if (league.picks.some(p => p.golferId === golferId)) {
       return res.status(400).json({ msg: 'Golfer already picked' });
     }
-    
-    const newPick = {
+
+    league.picks.push({
       user: req.user.id,
-      golferId: golferId,
-      golferName: golferName,
+      golferId,
+      golferName,
       pickNo: pickIndex + 1
-    };
-
-    league.picks.push(newPick);
-    await league.save();
-    
-    const responsePicks = league.picks.map(p => ({
-      user: p.user.toString(),
-      golfer: p.golferId,
-      golferName: p.golferName,
-      pickNo: p.pickNo
-    }));
-
-    res.status(200).json({
-      picks: responsePicks,
-      draftOrder: league.draftOrder
     });
 
+    await league.save();
+
+    res.status(200).json({
+      picks: league.picks.map(p => ({
+        user: p.user.toString(),
+        golfer: p.golferId,
+        golferName: p.golferName,
+        pickNo: p.pickNo
+      })),
+      draftOrder: league.draftOrder
+    });
   } catch (err) {
-    console.error('Make Pick Error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 }
