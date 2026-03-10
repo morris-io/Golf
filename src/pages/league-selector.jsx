@@ -2,6 +2,54 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 
+function Skeleton({ className }) {
+  return <div className={`bg-gray-200 rounded-lg animate-pulse ${className}`} />;
+}
+
+function LeagueSelectorSkeleton() {
+  return (
+    <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-2xl">
+      {/* Logo + tournament name */}
+      <div className="flex flex-col items-center mb-6 mt-0 space-y-4">
+        <Skeleton className="h-12 w-44" />
+        <Skeleton className="h-5 w-64" />
+      </div>
+
+      {/* Create section */}
+      <Skeleton className="h-5 w-36 mb-4" />
+      <Skeleton className="h-12 w-full mb-2" />
+      <Skeleton className="h-12 w-full mb-8" />
+
+      {/* Join section */}
+      <Skeleton className="h-5 w-28 mb-4" />
+      <div className="flex gap-2 mb-10">
+        <Skeleton className="h-10 flex-1" />
+        <Skeleton className="h-10 w-20" />
+      </div>
+
+      {/* Past leagues */}
+      <Skeleton className="h-5 w-28 mb-4" />
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-gray-50 p-4 rounded-lg shadow space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="h-4 w-10" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-9 flex-1" />
+              <Skeleton className="h-9 flex-1" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function LeagueSelector() {
   const router = useRouter();
   const [leagues, setLeagues]               = useState([]);
@@ -11,11 +59,11 @@ export default function LeagueSelector() {
   const [joinId, setJoinId]                 = useState('');
   const [error, setError]                   = useState('');
   const [loading, setLoading]               = useState(false);
-  
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tournamentName, setTournamentName] = useState('');
+  const [ready, setReady]                   = useState(false);
 
-  const token = typeof window !== 'undefined' && localStorage.getItem('token');
+  const token  = typeof window !== 'undefined' && localStorage.getItem('token');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const headers = {
     'Content-Type': 'application/json',
@@ -24,48 +72,34 @@ export default function LeagueSelector() {
 
   const fetchLeagues = async () => {
     setError('');
-    try {
-      const res  = await fetch(`${apiUrl}/api/leagues`, { headers });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || 'Could not load leagues');
-      setLeagues(data.leagues);
-    } catch (err) {
-      setError(err.message);
-    }
+    const res  = await fetch(`${apiUrl}/api/leagues`, { headers });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.msg || 'Could not load leagues');
+    setLeagues(data.leagues);
   };
 
   const fetchTournamentInfo = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/api/golfers/current`);
-      const data = await res.json();
-      if (res.ok && data.tournamentName) {
-        setTournamentName(data.tournamentName);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    const res  = await fetch(`${apiUrl}/api/golfers/current`);
+    const data = await res.json();
+    if (res.ok && data.tournamentName) setTournamentName(data.tournamentName);
   };
 
   useEffect(() => {
-    fetchLeagues();
-    fetchTournamentInfo();
+    Promise.all([
+      fetchLeagues().catch(() => {}),
+      fetchTournamentInfo().catch(() => {}),
+    ]).finally(() => setReady(true));
   }, []);
 
   const handleCreate = async () => {
     setError('');
     setLoading(true);
     try {
-      const finalName = leagueName.trim() || "My League";
-      const body = JSON.stringify({
-        name: finalName,
-        teamCount,
-        cutHandling,
-        tournamentName: tournamentName 
-      });
+      const finalName = leagueName.trim() || 'My League';
       const res  = await fetch(`${apiUrl}/api/leagues`, {
         method: 'POST',
         headers,
-        body,
+        body: JSON.stringify({ name: finalName, teamCount, cutHandling, tournamentName }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Error creating league');
@@ -101,17 +135,16 @@ export default function LeagueSelector() {
     if (!confirm('Are you sure you want to leave this league?')) return;
     setError('');
     try {
-      const res  = await fetch(`${apiUrl}/api/leagues/${id}/leave`, {
-        method: 'POST',
-        headers,
-      });
+      const res  = await fetch(`${apiUrl}/api/leagues/${id}/leave`, { method: 'POST', headers });
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Error leaving league');
-      fetchLeagues();
+      setLeagues(prev => prev.filter(l => l._id !== id));
     } catch (err) {
       setError(err.message);
     }
   };
+
+  if (!ready) return <Layout><LeagueSelectorSkeleton /></Layout>;
 
   return (
     <Layout>
@@ -120,19 +153,18 @@ export default function LeagueSelector() {
           <img
             src="/images/leagueslogo.png"
             alt="Fantasy Fairway"
-            className="h- w-44 mb-8 pt-4 "
+            className="h- w-44 mb-8 pt-4"
           />
           {tournamentName && (
             <p className="text-lg text-center font-semibold text-gray-700">
-              Draft now for the <span className="text-[#1A6B31] ">{tournamentName}</span>
+              Draft now for the <span className="text-[#1A6B31]">{tournamentName}</span>
             </p>
           )}
         </div>
 
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        <label className="block text-lg font-semibold mb-7 pt-">
-            Create a league
-        </label>
+
+        <label className="block text-lg font-semibold mb-7">Create a league</label>
         <div className="mb-6 border-b border-gray-200 pb-6">
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
@@ -143,11 +175,9 @@ export default function LeagueSelector() {
           </button>
 
           {showCreateForm && (
-            <div className="mb-4 space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100 animate-fade-in">
+            <div className="mb-4 space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  League Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">League Name</label>
                 <input
                   type="text"
                   placeholder="Enter league name"
@@ -157,25 +187,19 @@ export default function LeagueSelector() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Number of Teams
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Number of Teams</label>
                 <select
                   value={teamCount}
                   onChange={e => setTeamCount(Number(e.target.value))}
                   className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
                 >
                   {[1, 2, 3, 4, 5, 6].map(n => (
-                    <option key={n} value={n}>
-                      {n === 1 ? 'Demo (1 Team)' : `${n} Teams`}
-                    </option>
+                    <option key={n} value={n}>{n === 1 ? 'Demo (1 Team)' : `${n} Teams`}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cut Handling
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cut Handling</label>
                 <select
                   value={cutHandling}
                   onChange={e => setCutHandling(e.target.value)}
@@ -187,7 +211,7 @@ export default function LeagueSelector() {
               </div>
             </div>
           )}
-          
+
           <button
             onClick={handleCreate}
             disabled={loading}
@@ -197,10 +221,7 @@ export default function LeagueSelector() {
           </button>
         </div>
 
-        <label className="block text-lg font-semibold mb-7 pt-">
-            Join a league
-        </label>
-        
+        <label className="block text-lg font-semibold mb-7">Join a league</label>
         <form onSubmit={handleJoin} className="flex space-x-2 mb-10">
           <input
             type="text"
@@ -221,21 +242,15 @@ export default function LeagueSelector() {
         <h2 className="text-lg font-semibold mb-4">Past Leagues</h2>
         <ul className="space-y-4">
           {leagues.map(lg => (
-            <li
-              key={lg._id}
-              className="bg-gray-50 p-4 rounded-lg shadow flex flex-col space-y-2"
-            >
+            <li key={lg._id} className="bg-gray-50 p-4 rounded-lg shadow flex flex-col space-y-2">
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold">{lg.name}</h3>
-                   {lg.tournamentName && (
+                  {lg.tournamentName && (
                     <p className="text-xs text-[#1A6B31] font-medium">{lg.tournamentName}</p>
-                   )}
+                  )}
                 </div>
-                <button
-                  onClick={() => handleLeave(lg._id)}
-                  className="text-red-600 hover:underline text-sm"
-                >
+                <button onClick={() => handleLeave(lg._id)} className="text-red-600 hover:underline text-sm">
                   Leave
                 </button>
               </div>
