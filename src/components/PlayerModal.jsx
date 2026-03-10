@@ -27,7 +27,37 @@ function countryFlag(abbr) {
   return map[abbr.toLowerCase()] ?? null;
 }
 
-// Avatar: initials in a green circle
+function oddsKey(name) {
+  return (name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z\s]/g, '')
+    .replace(/\s+/g, '');
+}
+
+function findOdds(golferName, oddsMap) {
+  if (!golferName || !oddsMap) return null;
+  const key = oddsKey(golferName);
+  if (oddsMap[key] !== undefined) return oddsMap[key];
+  const lastName = oddsKey(golferName.split(' ').slice(-1)[0]);
+  const match = Object.entries(oddsMap).find(([k]) => k.endsWith(lastName));
+  return match ? match[1] : null;
+}
+
+function formatOdds(price) {
+  if (price === null || price === undefined) return null;
+  return price > 0 ? `+${price}` : `${price}`;
+}
+
+function oddsColor(price) {
+  if (price === null || price === undefined) return 'text-gray-500';
+  if (price <= -200) return 'text-yellow-600';
+  if (price <= 500)  return 'text-green-700';
+  if (price <= 2000) return 'text-blue-600';
+  return 'text-purple-600';
+}
+
 function Avatar({ name }) {
   const initials = name
     .split(' ')
@@ -43,8 +73,11 @@ function Avatar({ name }) {
   );
 }
 
-export default function PlayerModal({ golferId, golferName, onClose }) {
+export default function PlayerModal({ golferId, golferName, tournamentName, onClose }) {
   const [profile, setProfile]   = useState(null);
+  const [odds, setOdds]         = useState(null);
+  const [oddsBook, setOddsBook] = useState(null);
+  const [news, setNews]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [visible, setVisible]   = useState(false);
   const backdropRef             = useRef(null);
@@ -59,11 +92,22 @@ export default function PlayerModal({ golferId, golferName, onClose }) {
   useEffect(() => {
     if (!golferId) return;
     setLoading(true);
-    fetch(`${apiUrl}/api/golfers/${golferId}`)
-      .then(r => r.json())
-      .then(data => setProfile(data))
-      .catch(() => setProfile(null))
-      .finally(() => setLoading(false));
+
+    const newsParams = new URLSearchParams();
+    if (tournamentName) newsParams.set('tournament', tournamentName);
+
+    Promise.all([
+      fetch(`${apiUrl}/api/golfers/${golferId}`).then(r => r.json()).catch(() => null),
+      fetch(`${apiUrl}/api/odds/golf`).then(r => r.json()).catch(() => null),
+      fetch(`${apiUrl}/api/news/golfer/${encodeURIComponent(golferName)}?${newsParams.toString()}`).then(r => r.json()).catch(() => null),
+    ]).then(([profileData, oddsData, newsData]) => {
+      setProfile(profileData ?? null);
+      if (oddsData?.odds) {
+        setOdds(findOdds(golferName, oddsData.odds));
+        setOddsBook(oddsData.bookmaker ?? null);
+      }
+      setNews(newsData?.articles ?? []);
+    }).finally(() => setLoading(false));
   }, [golferId]);
 
   const handleClose = () => {
@@ -82,12 +126,12 @@ export default function PlayerModal({ golferId, golferName, onClose }) {
     profile?.countryAbbreviation?.toUpperCase(),
   ].filter(Boolean).join(', ');
 
-  const results     = profile?.results ?? [];
-  const made        = results.filter(r => !r.cut);
-  const avgScore    = made.length
+  const results    = profile?.results ?? [];
+  const made       = results.filter(r => !r.cut);
+  const avgScore   = made.length
     ? (made.reduce((s, r) => s + (r.scoreToPar ?? 0), 0) / made.length).toFixed(1)
     : null;
-  const bestResult  = made.reduce((best, r) => {
+  const bestResult = made.reduce((best, r) => {
     if (r.scoreToPar === null) return best;
     if (best === null || r.scoreToPar < best) return r.scoreToPar;
     return best;
@@ -100,7 +144,6 @@ export default function PlayerModal({ golferId, golferName, onClose }) {
       className="fixed inset-0 z-[60] flex items-end"
       style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
     >
-      {/* Sheet */}
       <div
         className="w-full bg-white rounded-t-2xl shadow-2xl flex flex-col"
         style={{
@@ -124,6 +167,16 @@ export default function PlayerModal({ golferId, golferName, onClose }) {
                   {location}
                 </p>
               )}
+              {odds !== null && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className={`text-sm font-bold ${oddsColor(odds)}`}>
+                    {formatOdds(odds)}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    to win{oddsBook ? ` · ${oddsBook}` : ''}
+                  </span>
+                </div>
+              )}
             </div>
             <button
               onClick={handleClose}
@@ -133,11 +186,10 @@ export default function PlayerModal({ golferId, golferName, onClose }) {
             </button>
           </div>
 
-          {/* Quick stats bar */}
           {results.length > 0 && (
             <div className="flex gap-4 mt-4">
               <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-center">
-                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Events</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Total Events</p>
                 <p className="text-lg font-bold text-gray-800">{results.length}</p>
               </div>
               <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-center">
@@ -154,7 +206,7 @@ export default function PlayerModal({ golferId, golferName, onClose }) {
               )}
               {bestResult !== null && (
                 <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Best</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Best Score</p>
                   <p className="text-lg font-bold text-green-600">{formatScore(bestResult)}</p>
                 </div>
               )}
@@ -162,7 +214,6 @@ export default function PlayerModal({ golferId, golferName, onClose }) {
           )}
         </div>
 
-        {/* Scrollable body */}
         <div className="overflow-y-auto flex-1 px-5 py-4">
           {loading && (
             <div className="flex justify-center items-center py-16">
@@ -170,44 +221,80 @@ export default function PlayerModal({ golferId, golferName, onClose }) {
             </div>
           )}
 
-          {!loading && results.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-4xl mb-3">⛳</p>
-              <p className="text-gray-500 font-medium">No tournament history yet</p>
-              <p className="text-gray-400 text-sm mt-1">Results will appear after tournaments complete</p>
-            </div>
-          )}
+          {!loading && (
+            <>
+              {news.length > 0 && (
+                <div className="mb-5">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                    Latest News
+                  </h3>
+                  <ul className="space-y-2">
+                    {news.map((article, i) => (
+                      <li key={i}>
+                        <a
+                          href={article.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block py-3 px-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-green-50 hover:border-green-200 transition-colors"
+                        >
+                          <p className="text-sm font-semibold text-gray-800 leading-snug">
+                            {article.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            {article.source && (
+                              <span className="text-[11px] font-medium text-green-700">
+                                {article.source}
+                              </span>
+                            )}
+                            {article.pubDate && (
+                              <span className="text-[11px] text-gray-400">{article.pubDate}</span>
+                            )}
+                          </div>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-          {!loading && results.length > 0 && (
-            <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                Tournament History
-              </h3>
-              <ul className="space-y-2">
-                {results.map((r, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center justify-between py-3 px-4 rounded-xl bg-gray-50 border border-gray-100"
-                  >
-                    <div className="flex-1 min-w-0 pr-4">
-                      <p className="text-sm font-semibold text-gray-800 truncate">
-                        {r.tournamentName}
-                      </p>
-                      {r.cut ? (
-                        <span className="inline-block mt-0.5 text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
-                          Missed Cut
+              {results.length === 0 ? (
+                <div className="text-center py-16">
+                  <p className="text-4xl mb-3">⛳</p>
+                  <p className="text-gray-500 font-medium">No tournament history yet</p>
+                  <p className="text-gray-400 text-sm mt-1">Results will appear after tournaments complete</p>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                    Tournament History
+                  </h3>
+                  <ul className="space-y-2">
+                    {results.map((r, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center justify-between py-3 px-4 rounded-xl bg-gray-50 border border-gray-100"
+                      >
+                        <div className="flex-1 min-w-0 pr-4">
+                          <p className="text-sm font-semibold text-gray-800 truncate">
+                            {r.tournamentName}
+                          </p>
+                          {r.cut ? (
+                            <span className="inline-block mt-0.5 text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                              Missed Cut
+                            </span>
+                          ) : (
+                            <p className="text-xs text-gray-400 mt-0.5">{r.position ?? '—'}</p>
+                          )}
+                        </div>
+                        <span className={`text-base font-bold font-mono ${scoreColor(r.scoreToPar, r.cut)}`}>
+                          {formatScore(r.scoreToPar)}
                         </span>
-                      ) : (
-                        <p className="text-xs text-gray-400 mt-0.5">{r.position ?? '—'}</p>
-                      )}
-                    </div>
-                    <span className={`text-base font-bold font-mono ${scoreColor(r.scoreToPar, r.cut)}`}>
-                      {formatScore(r.scoreToPar)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
 
           <div className="h-6" />

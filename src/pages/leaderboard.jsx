@@ -164,28 +164,30 @@ export default function Leaderboard() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="px-6 py-4 bg-[#1A6B31] relative flex items-center justify-center">
+        <div className="px-6 py-4 bg-white relative flex items-center justify-center">
           <button
             onClick={() => router.push('/leaderboard')}
-            className="absolute left-4 text-green-100 hover:text-white transition p-1 rounded-full hover:bg-green-700"
+            className="absolute left-4 text-[#1A6B31] hover:text-white transition p-1 rounded-full hover:bg-green-700"
             aria-label="Back to Leagues"
           >
-            <ArrowLeftIcon className="w-6 h-6" />
+            <ArrowLeftIcon className="w-6 h-6 mb-4" />
           </button>
 
           <div className="text-center">
-            <h1 className="text-white text-xl font-semibold">
-              {currentLeague?.name || 'Leaderboard'}
-            </h1>
+          <img
+            src="/images/leaderboardlogo.png"
+            alt="Fantasy Fairway"
+            className="h- w-44 mb-8 pt-7 "
+          />
             {currentLeague?.tournamentName && (
-              <p className="text-green-100 text-sm font-medium">
+              <p className="text-[#1A6B31] text-sm font-medium">
                 {currentLeague.tournamentName}
               </p>
             )}
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="pt-2">
           {loading && <p className="text-center py-4 text-gray-500">Loading scores…</p>}
           {error && <p className="text-red-500 text-center py-4">Error: {error}</p>}
 
@@ -193,9 +195,9 @@ export default function Leaderboard() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                  <th className="px-4 py-2 pl-10 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-4 py-2 pl-8 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                  <th className="px-4 py-3 pr-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -205,15 +207,15 @@ export default function Leaderboard() {
                       onClick={() => toggle(s.userId)}
                       className="cursor-pointer hover:bg-gray-100 transition-colors duration-150"
                     >
-                      <td className="px-4 py-3 text-gray-600">{i + 1}</td>
-                      <td className="px-4 py-3 flex items-center justify-between text-gray-800 font-medium">
+                      <td className="px-4 py-3 pl-10 text-gray-600">{i + 1}</td>
+                      <td className="px-4 py-3 pl-8 flex items-center justify-between text-gray-800 font-medium">
                         <span>{s.username}</span>
                         {openUser === s.userId
                           ? <ChevronDownIcon className="w-5 h-5 text-gray-400" />
                           : <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                         }
                       </td>
-                      <td className="px-4 py-3 font-bold text-gray-900">
+                      <td className="px-4 py-3 pl-12 font-bold text-gray-900">
                         {s.totalStrokes}
                       </td>
                     </tr>

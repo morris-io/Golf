@@ -240,10 +240,13 @@ export default function Draft() {
 
   return (
     <Layout>
-      <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg mx-auto space-y-6">
-        <div className="flex flex-col items-center py-3">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 mt-2">Draft Room</h1>
-          
+      <div className="max-w-md mx-auto mt-4 p-6 bg-white shadow-lg rounded-2xl">
+        <div className="flex flex-col items-center mb-6 mt-0">
+          <img
+            src="/images/draftroomlogo.png"
+            alt="Fantasy Fairway"
+            className="h- w-44 mb-6 pt-7 "
+          />
           {tournamentName && (
             <p className="text-green-800 font-bold text-sm uppercase tracking-wider mb-2">
               {tournamentName}
