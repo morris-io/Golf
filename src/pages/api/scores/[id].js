@@ -38,7 +38,6 @@ async function handler(req, res) {
       const tournament   = event?.tournament;
 
       const rawCut = tournament?.cutScore;
-
       const cutRound       = tournament?.cutRound ?? 2;
       const currentPeriod  = competition?.status?.period ?? 1;
       const cutHasHappened = currentPeriod > cutRound;
@@ -79,6 +78,20 @@ async function handler(req, res) {
 
         return { golferId: gid, strokes: finalStrokes, status: statusName, capped };
       });
+
+      if (event?.status?.type?.name === 'STATUS_FINAL') {
+        const host     = req.headers.host;
+        const protocol = host?.includes('localhost') ? 'http' : 'https';
+        fetch(`${protocol}://${host}/api/tournaments/save-results`, {
+          method:  'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': req.headers.authorization,
+          },
+        }).catch(err => {
+          console.warn('save-results background call failed:', err.message);
+        });
+      }
 
     } catch (fetchError) {
       console.warn('Warning: Skipped score update due to external API error:', fetchError.message);

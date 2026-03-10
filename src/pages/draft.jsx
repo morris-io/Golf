@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
+import PlayerModal from '../components/PlayerModal';
 
 export default function Draft() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function Draft() {
   const [joining,       setJoining]       = useState(false);
   const [loadingPick,   setLoadingPick]   = useState(false);
   const [error,         setError]         = useState('');
+  const [selectedGolfer, setSelectedGolfer] = useState(null);
 
   const pollRef = useRef(null);
 
@@ -334,7 +336,13 @@ export default function Draft() {
                   key={g.id}
                   className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3 shadow"
                 >
-                  <span className="font-medium text-gray-800">{g.name}</span>
+                  <button
+                    onClick={() => setSelectedGolfer({ id: g.id, name: g.name })}
+                    className="font-medium text-gray-800 text-left hover:text-green-700 transition-colors"
+                  >
+                    {g.name}
+                  </button>
+
                   <button
                     onClick={() => makePick(g.id, g.name)}
                     disabled={
@@ -356,6 +364,14 @@ export default function Draft() {
           )}
         </div>
       </div>
+
+      {selectedGolfer && (
+        <PlayerModal
+          golferId={selectedGolfer.id}
+          golferName={selectedGolfer.name}
+          onClose={() => setSelectedGolfer(null)}
+        />
+      )}
     </Layout>
   );
 }

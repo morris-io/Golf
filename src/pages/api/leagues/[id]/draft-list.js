@@ -11,7 +11,6 @@ async function handler(req, res) {
   const { id } = req.query;
 
   try {
-    // 1. Fetch the league (don't use .lean() if we need to .save())
     const league = await League.findById(id).populate('picks.user', 'username');
 
     if (!league) {
@@ -21,11 +20,9 @@ async function handler(req, res) {
     const maxPicks = league.members.length * 4;
     const isLeagueFull = league.members.length >= (league.teamCount || 0);
 
-    // 2. Persistent Initialization: Generate and SAVE order if it doesn't exist
     if (isLeagueFull && (!league.draftOrder || league.draftOrder.length < maxPicks)) {
       let memberIds = league.members.map(m => m.toString());
 
-      // Fisher-Yates Shuffle
       for (let i = memberIds.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [memberIds[i], memberIds[j]] = [memberIds[j], memberIds[i]];
