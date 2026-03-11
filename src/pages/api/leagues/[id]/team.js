@@ -22,8 +22,7 @@ async function handler(req, res) {
 
     const golferIds = myPicks.map(p => p.golferId);
     
-    const scoreDocs = await Score.find({ golferId: { $in: golferIds } }).lean();
-
+    const scoreDocs = await Score.find({ league: id, golferId: { $in: golferIds } }).lean();
     const team = myPicks.map(pick => {
       const doc = scoreDocs.find(s => s.golferId === pick.golferId);
       return {
