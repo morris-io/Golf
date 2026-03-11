@@ -22,20 +22,23 @@ async function handler(req, res) {
 
     if (isLeagueFull && (!league.draftOrder || league.draftOrder.length < maxPicks)) {
       let memberIds = league.members.map(m => m.toString());
-
       for (let i = memberIds.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [memberIds[i], memberIds[j]] = [memberIds[j], memberIds[i]];
       }
-
       let fullOrder = [];
       for (let round = 0; round < 5; round++) {
-        const roundOrder = (round % 2 === 0) ? [...memberIds] : [...memberIds].reverse();
+        const roundOrder = round % 2 === 0 ? [...memberIds] : [...memberIds].reverse();
         fullOrder = fullOrder.concat(roundOrder);
       }
-
-      league.draftOrder = fullOrder;
-      await league.save(); 
+    
+      await League.findOneAndUpdate(
+        { _id: league._id, $or: [{ draftOrder: { $exists: false } }, { draftOrder: { $size: 0 } }] },
+        { $set: { draftOrder: fullOrder } }
+      );
+    
+      const fresh = await League.findById(league._id);
+      league.draftOrder = fresh.draftOrder;
     }
 
     const draftOrder = (league.draftOrder || []).map(uid => uid.toString());

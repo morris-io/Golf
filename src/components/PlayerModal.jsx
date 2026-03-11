@@ -108,8 +108,8 @@ export default function PlayerModal({ golferId, golferName, tournamentName, onCl
       }
       setNews(newsData?.articles ?? []);
     }).finally(() => setLoading(false));
-  }, [golferId]);
-
+  }, [golferId, golferName, tournamentName]);
+  
   const handleClose = () => {
     setVisible(false);
     setTimeout(onClose, 300);

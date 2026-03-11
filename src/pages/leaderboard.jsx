@@ -226,7 +226,7 @@ export default function Leaderboard() {
             <img
               src="/images/leaderboardlogo.png"
               alt="Fantasy Fairway"
-              className="h- w-44 ml-6 mb-7 mt-7"
+              className="h- w-44 ml-7 mb-7 mt-7"
             />
             {currentLeague?.tournamentName && (
               <p className="text-green-800 font-bold text-sm uppercase tracking-wider mb-2">
