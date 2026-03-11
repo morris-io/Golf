@@ -17,7 +17,7 @@ async function handler(req, res) {
       return res.status(404).json({ msg: 'League not found' });
     }
 
-    const maxPicks = league.members.length * 4;
+    const maxPicks = league.members.length * 5
     const isLeagueFull = league.members.length >= (league.teamCount || 0);
 
     if (isLeagueFull && (!league.draftOrder || league.draftOrder.length < maxPicks)) {
@@ -29,7 +29,7 @@ async function handler(req, res) {
       }
 
       let fullOrder = [];
-      for (let round = 0; round < 4; round++) {
+      for (let round = 0; round < 5; round++) {
         const roundOrder = (round % 2 === 0) ? [...memberIds] : [...memberIds].reverse();
         fullOrder = fullOrder.concat(roundOrder);
       }

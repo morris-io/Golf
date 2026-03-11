@@ -70,7 +70,7 @@ async function handler(req, res) {
         let capped = false;
 
         if (useCutCap && toPar !== null) {
-          if (statusName !== 'STATUS_CUT' && toPar > cutScore) {
+          if (statusName !== null && toPar > cutScore) {
             finalStrokes = cutScore;
             capped = true;
           }

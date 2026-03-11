@@ -15,7 +15,7 @@ async function handler(req, res) {
     const league = await League.findById(id);
     if (!league) return res.status(404).json({ msg: 'League not found' });
 
-    const maxPicks = league.members.length * 4;
+    const maxPicks = league.members.length * 5;
 
     // Use existing order or generate if somehow missing
     if (!league.draftOrder || league.draftOrder.length < maxPicks) {
@@ -25,7 +25,7 @@ async function handler(req, res) {
         [memberIds[i], memberIds[j]] = [memberIds[j], memberIds[i]];
       }
       let fullOrder = [];
-      for (let round = 0; round < 4; round++) {
+      for (let round = 0; round < 5; round++) {
         const roundOrder = (round % 2 === 0) ? [...memberIds] : [...memberIds].reverse();
         fullOrder = fullOrder.concat(roundOrder);
       }
