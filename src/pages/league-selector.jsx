@@ -9,25 +9,20 @@ function Skeleton({ className }) {
 function LeagueSelectorSkeleton() {
   return (
     <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-2xl">
-      {/* Logo + tournament name */}
-      <div className="flex flex-col items-center mb-6 mt-0 space-y-4">
-        <Skeleton className="h-12 w-44" />
-        <Skeleton className="h-5 w-64" />
+      <div className="flex flex-col items-center mb-6 mt-4 space-y-10">
+        <Skeleton className="h-14 w-48" />
+        <Skeleton className="h-12 w-64" />
       </div>
 
-      {/* Create section */}
-      <Skeleton className="h-5 w-36 mb-4" />
-      <Skeleton className="h-12 w-full mb-2" />
-      <Skeleton className="h-12 w-full mb-8" />
+      <Skeleton className="h-5 w-36 mb-10" />
+      <Skeleton className="h-12 w-full mb-4" />
+      <Skeleton className="h-12 w-full mb-16" />
 
-      {/* Join section */}
-      <Skeleton className="h-5 w-28 mb-4" />
+      <Skeleton className="h-5 w-28 mb-10" />
       <div className="flex gap-2 mb-10">
         <Skeleton className="h-10 flex-1" />
-        <Skeleton className="h-10 w-20" />
       </div>
 
-      {/* Past leagues */}
       <Skeleton className="h-5 w-28 mb-4" />
       <div className="space-y-4">
         {[1, 2, 3].map(i => (
@@ -193,7 +188,7 @@ export default function LeagueSelector() {
                   onChange={e => setTeamCount(Number(e.target.value))}
                   className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
                 >
-                  {[1, 2, 3, 4, 5, 6].map(n => (
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
                     <option key={n} value={n}>{n === 1 ? 'Demo (1 Team)' : `${n} Teams`}</option>
                   ))}
                 </select>

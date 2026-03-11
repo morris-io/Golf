@@ -3,23 +3,61 @@ import { useRouter } from 'next/router';
 import { ChevronDownIcon, ChevronRightIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
 import Layout from '../components/Layout';
 
+function Skeleton({ className }) {
+  return <div className={`bg-gray-200 rounded-lg animate-pulse ${className}`} />;
+}
+
+
+
+function LeaderboardSkeleton({ currentLeague }) {
+  return (
+    <div className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-2xl overflow-hidden">
+      <div className="px-6 py-4 bg-white relative flex items-center justify-center">
+        <div className="absolute left-4 w-6 h-6 rounded-full bg-gray-200 animate-pulse" />
+        <div className="text-center mt-6 space-y-5">
+          <Skeleton className="h-10 w-52 mx-auto" />
+<Skeleton className="h-5 w-64" />
+        </div>
+      </div>
+      <div className="pt-2">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-2 pl-10 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+              <th className="px-4 py-2 pl-8 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+              <th className="px-4 py-3 pr-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {[1, 2, 3, 4, 5].map(i => (
+              <tr key={i}>
+                <td className="px-4 py-3 pl-10"><Skeleton className="h-4 w-4" /></td>
+                <td className="px-4 py-3 pl-8"><Skeleton className="h-4 w-28" /></td>
+                <td className="px-4 py-3 pl-12"><Skeleton className="h-4 w-10 mr-10" /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function Leaderboard() {
   const router = useRouter();
   const { leagueId } = router.query;
 
-  const [standings, setStandings] = useState([]);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState('');
-  const [openUser, setOpenUser]   = useState(null);
-  const [leagues, setLeagues]     = useState([]);
+  const [standings, setStandings]       = useState([]);
+  const [loading, setLoading]           = useState(false);
+  const [ready, setReady]               = useState(false);
+  const [error, setError]               = useState('');
+  const [openUser, setOpenUser]         = useState(null);
+  const [leagues, setLeagues]           = useState([]);
+  const [leaguesReady, setLeaguesReady] = useState(false);
 
-  const token =
-    typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-  };
+  const token   = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const apiUrl  = process.env.NEXT_PUBLIC_API_URL || '';
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -30,11 +68,13 @@ export default function Leaderboard() {
 
   const fetchLeagues = async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/leagues`, { headers });
+      const res  = await fetch(`${apiUrl}/api/leagues`, { headers });
       const data = await res.json();
       if (res.ok) setLeagues(data.leagues || []);
     } catch (err) {
       console.error('Failed to fetch leagues:', err);
+    } finally {
+      setLeaguesReady(true);
     }
   };
 
@@ -64,6 +104,7 @@ export default function Leaderboard() {
       setError(err.message);
     } finally {
       setLoading(false);
+      setReady(true);
     }
   };
 
@@ -73,15 +114,13 @@ export default function Leaderboard() {
 
   useEffect(() => {
     if (!leagueId) return;
+    setReady(false);
     let pollId;
 
     const startPolling = () => {
       if (!pollId) pollId = setInterval(refreshLeaderboard, 2 * 60 * 1000);
     };
-    const stopPolling = () => {
-      clearInterval(pollId);
-      pollId = null;
-    };
+    const stopPolling = () => { clearInterval(pollId); pollId = null; };
     const handleVisibility = () => {
       if (document.hidden) stopPolling();
       else startPolling();
@@ -101,15 +140,17 @@ export default function Leaderboard() {
   const currentLeague = leagues.find(l => l._id === leagueId);
 
   function scoreColorClass(p) {
-    if (p.capped)            return 'text-red-700';
-     if (typeof p.strokes === 'number') {
-      if (p.strokes < -2)    return 'text-blue-800';
-      if (p.strokes > 2)     return 'text-red-700';
+    if (p.capped) return 'text-red-700';
+    if (typeof p.strokes === 'number') {
+      if (p.strokes < -2) return 'text-blue-800';
+      if (p.strokes > 2)  return 'text-red-700';
     }
     return 'text-gray-500';
   }
 
   if (!leagueId) {
+    if (!leaguesReady) return <Layout><LeaderboardSkeleton /></Layout>;
+
     return (
       <Layout>
         <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-2xl">
@@ -161,9 +202,17 @@ export default function Leaderboard() {
     );
   }
 
+  if (!ready) {
+    return (
+      <Layout>
+        <LeaderboardSkeleton currentLeague={currentLeague} />
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden">
+      <div className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-2xl overflow-hidden">
         <div className="px-6 py-4 bg-white relative flex items-center justify-center">
           <button
             onClick={() => router.push('/leaderboard')}
@@ -173,14 +222,14 @@ export default function Leaderboard() {
             <ArrowLeftIcon className="w-6 h-6 mb-4" />
           </button>
 
-          <div className="text-center">
-          <img
-            src="/images/leaderboardlogo.png"
-            alt="Fantasy Fairway"
-            className="h- w-44 mb-8 pt-7 "
-          />
+          <div className="text-center text-lg">
+            <img
+              src="/images/leaderboardlogo.png"
+              alt="Fantasy Fairway"
+              className="h- w-44 ml-6 mb-7 mt-7"
+            />
             {currentLeague?.tournamentName && (
-              <p className="text-[#1A6B31] text-sm font-medium">
+              <p className="text-green-800 font-bold text-sm uppercase tracking-wider mb-2">
                 {currentLeague.tournamentName}
               </p>
             )}
@@ -188,11 +237,10 @@ export default function Leaderboard() {
         </div>
 
         <div className="pt-2">
-          {loading && <p className="text-center py-4 text-gray-500">Loading scores…</p>}
           {error && <p className="text-red-500 text-center py-4">Error: {error}</p>}
 
-          {!loading && !error && (
-            <table className="min-w-full divide-y divide-gray-200">
+          {!error && (
+            <table className="mb-3 min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 pl-10 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>

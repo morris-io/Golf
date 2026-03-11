@@ -3,6 +3,46 @@ import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import PlayerModal from '../components/PlayerModal';
 
+function Skeleton({ className }) {
+  return <div className={`bg-gray-200 rounded-lg animate-pulse ${className}`} />;
+}
+
+function DraftSkeleton() {
+  return (
+    <div className="max-w-md mx-auto mt-4 p-6 bg-white shadow-lg rounded-2xl">
+      <div className="flex flex-col items-center mb-6 mt-0 space-y-4">
+        <Skeleton className="h-16 w-44" />
+        <Skeleton className="h-4 w-52" />
+        <div className="flex gap-3 w-full pt-1">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 flex-1" />
+        </div>
+      </div>
+      <div className="space-y-2 mb-4">
+        <Skeleton className="h-4 w-16" />
+        <div className="flex space-x-3 overflow-hidden">
+          {[1,2,3].map(i => <Skeleton key={i} className="h-16 min-w-[10rem] flex-shrink-0" />)}
+        </div>
+      </div>
+      <div className="space-y-2 mb-4">
+        <Skeleton className="h-4 w-32" />
+        <div className="flex space-x-3 overflow-hidden">
+          {[1,2,3,4].map(i => <Skeleton key={i} className="h-9 w-24 flex-shrink-0" />)}
+        </div>
+      </div>
+      <Skeleton className="h-8 w-full rounded-full mb-4" />
+      <div className="space-y-4">
+        {[1,2,3,4,5,6,7,8].map(i => (
+          <div key={i} className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-8 w-16 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Draft() {
   const router = useRouter();
   const { leagueId } = router.query;
@@ -22,6 +62,7 @@ export default function Draft() {
   const [loadingPick,   setLoadingPick]   = useState(false);
   const [error,         setError]         = useState('');
   const [selectedGolfer, setSelectedGolfer] = useState(null);
+  const [ready,         setReady]         = useState(false);
 
   const pollRef = useRef(null);
 
@@ -153,9 +194,9 @@ export default function Draft() {
   useEffect(() => {
     if (!leagueId) return;
 
-    fetchLeague();
-    fetchDraft();
-    fetchField();
+    setReady(false);
+    Promise.all([fetchLeague(), fetchDraft(), fetchField()])
+      .finally(() => setReady(true));
 
     const startPolling = () => {
       if (!pollRef.current) pollRef.current = setInterval(fetchDraft, 10_000);
@@ -225,12 +266,6 @@ export default function Draft() {
     background: '#f3f4f6', 
   };
 
-  if (loadingField)
-    return (
-      <Layout>
-        <p className="text-center mt-8">Loading golfers…</p>
-      </Layout>
-    );
   if (fieldError)
     return (
       <Layout>
@@ -240,138 +275,140 @@ export default function Draft() {
 
   return (
     <Layout>
-      <div className="max-w-md mx-auto mt-4 p-6 bg-white shadow-lg rounded-2xl">
-        <div className="flex flex-col items-center mb-6 mt-0">
-          <img
-            src="/images/draftroomlogo.png"
-            alt="Fantasy Fairway"
-            className="h- w-44 mb-6 pt-7 "
-          />
-          {tournamentName && (
-            <p className="text-green-800 font-bold text-sm uppercase tracking-wider mb-2">
-              {tournamentName}
-            </p>
-          )}
+      {!ready ? (
+        <DraftSkeleton />
+      ) : (
+        <div className="max-w-md mx-auto mt-4 p-6 bg-white shadow-lg rounded-2xl">
+          <div className="flex flex-col items-center mb-6 mt-0">
+            <img
+              src="/images/draftroomlogo.png"
+              alt="Fantasy Fairway"
+              className="h- w-44 mb-6 pt-7 "
+            />
+            {tournamentName && (
+              <p className="text-green-800 font-bold text-sm uppercase tracking-wider mb-2">
+                {tournamentName}
+              </p>
+            )}
 
-          <div className="flex flex-wrap justify-center gap-3 w-full">
-            
-            <button
-              onClick={isComplete ? null : copyLink}
-              disabled={isComplete}
-              style={isComplete ? disabledStyle : buttonBaseStyle}
-            >
-              {joining ? 'Joining…' : 'Copy Invite Link'}
-            </button>
-
-            <button
-              onClick={() => {
-                if (isComplete) router.push(`/leaderboard?leagueId=${leagueId}`);
-              }}
-              disabled={!isComplete}
-              style={!isComplete ? disabledStyle : buttonBaseStyle}
-            >
-              View My Team
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-med font-semibold mb-2">Results</h2>
-          {picks.length === 0 ? (
-            <p className="text-gray-500 text-center">No picks yet.</p>
-          ) : (
-            <ul className="flex space-x-3 overflow-x-auto px-1">
-              {picks
-                .slice()
-                .reverse()
-                .map((p, idx) => (
-                  <li
-                    key={idx}
-                    className="min-w-[10rem] bg-gray-50 rounded-lg p-3 shadow text-center"
-                  >
-                    <span className="block text-sm font-medium mb-1">
-                      {p.golferName}
-                    </span>
-                    <span className="text-xs text-gray-600">
-                      Pick {p.pickNo} • {userMap[p.user] || p.user}
-                    </span>
-                  </li>
-                ))}
-            </ul>
-          )}
-        </div>
-
-        <div>
-          <h2 className="text-med font-semibold mb-2">
-            Upcoming Picks
-          </h2>
-          <ul className="flex space-x-3 overflow-x-auto px-1">
-            {upcoming.map((uid, idx) => (
-              <li
-                key={idx}
-                className={`min-w-[6rem] py-2 px-3 text-center rounded-lg ${
-                  idx === 0 ? 'bg-green-200' : 'bg-gray-100'
-                }`}
+            <div className="flex flex-wrap justify-center gap-3 w-full">
+              <button
+                onClick={isComplete ? null : copyLink}
+                disabled={isComplete}
+                style={isComplete ? disabledStyle : buttonBaseStyle}
               >
-                {userMap[uid] || uid}
-              </li>
-            ))}
-          </ul>
-        </div>
+                {joining ? 'Joining…' : 'Copy Invite Link'}
+              </button>
 
-        <div>
-          <h2 className="text-med font-semibold mb-2">Available Golfers</h2>
+              <button
+                onClick={() => {
+                  if (isComplete) router.push(`/leaderboard?leagueId=${leagueId}`);
+                }}
+                disabled={!isComplete}
+                style={!isComplete ? disabledStyle : buttonBaseStyle}
+              >
+                View My Team
+              </button>
+            </div>
+          </div>
 
-          <input
-            type="text"
-            placeholder="Search golfers…"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full mb-4 px-3 py-1 rounded-full border-2 border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
+          <div>
+            <h2 className="text-med font-semibold mb-2">Results</h2>
+            {picks.length === 0 ? (
+              <p className="text-gray-500 text-center">No picks yet.</p>
+            ) : (
+              <ul className="flex space-x-3 overflow-x-auto px-1">
+                {picks
+                  .slice()
+                  .reverse()
+                  .map((p, idx) => (
+                    <li
+                      key={idx}
+                      className="min-w-[10rem] bg-gray-50 rounded-lg p-3 shadow text-center"
+                    >
+                      <span className="block text-sm font-medium mb-1">
+                        {p.golferName}
+                      </span>
+                      <span className="block text-xs text-gray-600 overflow-hidden whitespace-nowrap">
+                        Pick {p.pickNo} • {userMap[p.user] || p.user}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
 
-          {filtered.length === 0 ? (
-            <p className="text-gray-500">There is no PGA Tournament this weekend</p>
-          ) : (
-            <ul className="space-y-4">
-              {filtered.map(g => (
-                <li
-                  key={g.id}
-                  className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3 shadow"
-                >
-                  <button
-                    onClick={() => setSelectedGolfer({ id: g.id, name: g.name })}
-                    className="font-medium text-gray-800 text-left hover:text-green-700 transition-colors"
-                  >
-                    {g.name}
-                  </button>
-
-                  <button
-                    onClick={() => makePick(g.id, g.name)}
-                    disabled={
-                      !leagueReady || 
-                      loadingPick || 
-                      String(order[picks.length]) !== String(userId) 
-                    }
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-                      leagueReady && String(order[picks.length]) === String(userId)
-                        ? 'bg-green-500 hover:bg-green-600 text-white'
-                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {loadingPick ? 'Picking…' : 'Pick'}
-                  </button>
-                </li>
+          <div>
+            <h2 className="text-med font-semibold mb-2 mt-2">Upcoming Picks</h2>
+            <ul className="flex space-x-3 overflow-x-auto px-1">
+              {upcoming.map((uid, idx) => (
+            <li
+              key={idx}
+              className={`min-w-[4rem] max-w-[6rem] py-2 px-3 text-center rounded-lg ${
+                idx === 0 ? 'bg-green-200' : 'bg-gray-100'
+              }`}
+            >
+              <span className="block overflow-hidden whitespace-nowrap text-sm">{userMap[uid] || uid}</span>
+            </li>
               ))}
             </ul>
-          )}
+          </div>
+
+          <div>
+            <h2 className="text-med font-semibold mb-2 mt-2">Available Golfers</h2>
+
+            <input
+              type="text"
+              placeholder="Search golfers…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full mb-4 px-3 py-1 rounded-full border-2 border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400"
+            />
+
+            {filtered.length === 0 ? (
+              <p className="text-gray-500">There is no PGA Tournament this weekend</p>
+            ) : (
+              <ul className="space-y-4">
+                {filtered.map(g => (
+                  <li
+                    key={g.id}
+                    className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3 shadow"
+                  >
+                    <button
+                      onClick={() => setSelectedGolfer({ id: g.id, name: g.name })}
+                      className="font-medium text-gray-800 text-left hover:text-green-700 transition-colors"
+                    >
+                      {g.name}
+                    </button>
+
+                    <button
+                      onClick={() => makePick(g.id, g.name)}
+                      disabled={
+                        !leagueReady || 
+                        loadingPick || 
+                        String(order[picks.length]) !== String(userId) 
+                      }
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                        leagueReady && String(order[picks.length]) === String(userId)
+                          ? 'bg-green-500 hover:bg-green-600 text-white'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {loadingPick ? 'Picking…' : 'Pick'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {selectedGolfer && (
         <PlayerModal
           golferId={selectedGolfer.id}
           golferName={selectedGolfer.name}
+          tournamentName={tournamentName}
           onClose={() => setSelectedGolfer(null)}
         />
       )}

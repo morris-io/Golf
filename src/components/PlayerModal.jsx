@@ -131,11 +131,9 @@ export default function PlayerModal({ golferId, golferName, tournamentName, onCl
   const avgScore   = made.length
     ? (made.reduce((s, r) => s + (r.scoreToPar ?? 0), 0) / made.length).toFixed(1)
     : null;
-  const bestResult = made.reduce((best, r) => {
-    if (r.scoreToPar === null) return best;
-    if (best === null || r.scoreToPar < best) return r.scoreToPar;
-    return best;
-  }, null);
+    const cutPct = results.length > 0
+    ? Math.round((made.length / results.length) * 100)
+    : null;
 
   return (
     <div
@@ -196,6 +194,14 @@ export default function PlayerModal({ golferId, golferName, tournamentName, onCl
                 <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cuts Made</p>
                 <p className="text-lg font-bold text-gray-800">{made.length}</p>
               </div>
+              {cutPct !== null && (
+                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-center">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">% CUTS MADE</p>
+                  <p className={`text-lg font-bold ${cutPct >= 60 ? 'text-green-600' : cutPct >= 40 ? 'text-gray-700' : 'text-red-500'}`}>
+                    {cutPct}%
+                  </p>
+                </div>
+              )}
               {avgScore !== null && (
                 <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Avg Score</p>
@@ -204,12 +210,7 @@ export default function PlayerModal({ golferId, golferName, tournamentName, onCl
                   </p>
                 </div>
               )}
-              {bestResult !== null && (
-                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Best Score</p>
-                  <p className="text-lg font-bold text-green-600">{formatScore(bestResult)}</p>
-                </div>
-              )}
+
             </div>
           )}
         </div>
