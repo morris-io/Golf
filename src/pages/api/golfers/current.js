@@ -2,7 +2,7 @@ import { getLeaderboard } from '../../../services/sportContentApiFree';
 
 let cacheData = null;
 let cacheAt = 0;
-const CACHE_TTL = 24 * 60 * 60 * 1000; 
+const CACHE_TTL = 60 * 60 * 1000; 
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
