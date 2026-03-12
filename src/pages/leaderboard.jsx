@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { ChevronDownIcon, ChevronRightIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
 import Layout from '../components/Layout';
+import LeaderboardPlayerModal from '../components/LeaderboardPlayerModal';
 
 function Skeleton({ className }) {
   return <div className={`bg-gray-200 rounded-lg animate-pulse ${className}`} />;
 }
-
-
 
 function LeaderboardSkeleton({ currentLeague }) {
   return (
@@ -16,7 +15,7 @@ function LeaderboardSkeleton({ currentLeague }) {
         <div className="absolute left-4 w-6 h-6 rounded-full bg-gray-200 animate-pulse" />
         <div className="text-center mt-6 space-y-5">
           <Skeleton className="h-10 w-52 mx-auto" />
-<Skeleton className="h-5 w-64" />
+          <Skeleton className="h-5 w-64" />
         </div>
       </div>
       <div className="pt-2">
@@ -47,13 +46,15 @@ export default function Leaderboard() {
   const router = useRouter();
   const { leagueId } = router.query;
 
-  const [standings, setStandings]       = useState([]);
-  const [loading, setLoading]           = useState(false);
-  const [ready, setReady]               = useState(false);
-  const [error, setError]               = useState('');
-  const [openUser, setOpenUser]         = useState(null);
-  const [leagues, setLeagues]           = useState([]);
-  const [leaguesReady, setLeaguesReady] = useState(false);
+  const [standings, setStandings]         = useState([]);
+  const [loading, setLoading]             = useState(false);
+  const [ready, setReady]                 = useState(false);
+  const [error, setError]                 = useState('');
+  const [openUser, setOpenUser]           = useState(null);
+  const [leagues, setLeagues]             = useState([]);
+  const [leaguesReady, setLeaguesReady]   = useState(false);
+  const [selectedGolfer, setSelectedGolfer] = useState(null);
+  const [currentLeague, setCurrentLeague] = useState(null);
 
   const token   = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const apiUrl  = process.env.NEXT_PUBLIC_API_URL || '';
@@ -136,8 +137,24 @@ export default function Leaderboard() {
     };
   }, [leagueId]);
 
+  // currentLeague fallback — works whether user navigates directly or via league selector
+  useEffect(() => {
+    if (!leagueId) return;
+
+    const found = leagues.find(l => l._id === leagueId);
+    if (found) {
+      setCurrentLeague(found);
+      return;
+    }
+
+    if (!token) return;
+    fetch(`${apiUrl}/api/leagues/${leagueId}`, { headers })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.league) setCurrentLeague(data.league); })
+      .catch(() => {});
+  }, [leagueId, leagues]);
+
   const toggle = (uid) => setOpenUser(openUser === uid ? null : uid);
-  const currentLeague = leagues.find(l => l._id === leagueId);
 
   function scoreColorClass(p) {
     if (p.capped) return 'text-red-700';
@@ -274,12 +291,17 @@ export default function Leaderboard() {
                           <ul className="divide-y divide-gray-200">
                             {s.picks.map((p) => (
                               <li key={p.golferId} className="flex justify-between items-center py-2 text-sm">
-                                <span className={p.status === 'STATUS_CUT' ? 'text-red-700 font-medium' : 'text-gray-600'}>
+                                <button
+                                  onClick={() => setSelectedGolfer({ id: p.golferId, name: p.name })}
+                                  className={`text-left hover:text-green-700 transition-colors ${
+                                    p.status === 'STATUS_CUT' ? 'text-red-700 font-medium' : 'text-gray-600'
+                                  }`}
+                                >
                                   {p.name}
                                   {p.status === 'STATUS_CUT' && (
                                     <span className="ml-1 text-xs font-semibold uppercase">(CUT)</span>
                                   )}
-                                </span>
+                                </button>
 
                                 <div className="flex items-center gap-1.5">
                                   {p.capped && (
@@ -289,7 +311,7 @@ export default function Leaderboard() {
                                   )}
                                   <span className={`font-mono font-medium ${scoreColorClass(p)}`}>
                                     {typeof p.strokes === 'number'
-                                      ? p.strokes > 0 ? `+${p.strokes}` : p.strokes
+                                      ? p.strokes > 0 ? `+${p.strokes}` : p.strokes === 0 ? 'E' : p.strokes
                                       : p.strokes}
                                   </span>
                                 </div>
@@ -306,6 +328,15 @@ export default function Leaderboard() {
           )}
         </div>
       </div>
+
+      {selectedGolfer && (
+        <LeaderboardPlayerModal
+          golferId={selectedGolfer.id}
+          golferName={selectedGolfer.name}
+          tournamentName={currentLeague?.tournamentName}
+          onClose={() => setSelectedGolfer(null)}
+        />
+      )}
     </Layout>
   );
 }
