@@ -14,8 +14,8 @@ export default async function handler(req, res) {
   if (!username || !password) {
     return res.status(400).json({ msg: 'Please enter all fields' });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ msg: 'Password must be at least 6 characters' });
+  if (password.length < 3) {
+    return res.status(400).json({ msg: 'Password must be at least 3 characters' });
   }
 
   try {
@@ -54,6 +54,9 @@ export default async function handler(req, res) {
       }
     );
   } catch (err) {
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ msg: Object.values(err.errors)[0].message });
+    }
     console.error(err.message);
     res.status(500).send('Server error');
   }

@@ -57,7 +57,6 @@ export default function Draft() {
   const [order,         setOrder]         = useState([]);
   const [leagueDetails, setLeagueDetails] = useState(null);
   const [searchTerm,    setSearchTerm]    = useState('');
-  const [isMyTurn,      setIsMyTurn]      = useState(false);
   const [joining,       setJoining]       = useState(false);
   const [loadingPick,   setLoadingPick]   = useState(false);
   const [error,         setError]         = useState('');
@@ -148,7 +147,6 @@ export default function Draft() {
       if (!res.ok) throw new Error(data.msg || 'Fetch draft failed');
       setPicks(data.picks);
       setOrder(data.draftOrder);
-      setIsMyTurn(data.draftOrder[data.picks.length] === userId);
       if (data.draftOrder.length && !leagueDetails?.draftOrder?.length) fetchLeague();
     } catch (err) {
       setError(err.message);
