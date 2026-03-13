@@ -10,7 +10,6 @@ export default async function handler(req, res) {
   await dbConnect();
 
   try {
-    // Extract core name — strip year and common suffixes for fuzzy matching
     const coreName = tournament
       .replace(/\d{4}/g, '')
       .replace(/presented by.*/i, '')

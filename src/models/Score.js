@@ -14,6 +14,7 @@ const ScoreSchema = new mongoose.Schema({
   strokes: Number, 
   status: String,
   capped: { type: Boolean, default: false },
+  manualOverride: { type: Boolean, default: false },  // ← add this
   lastUpdated: { type: Date, default: Date.now }
 });
 

@@ -98,21 +98,30 @@ async function handler(req, res) {
     }
 
     if (scores.length > 0) {
-      const bulk = scores.map(s => ({
-        updateOne: {
-          filter: { golferId: s.golferId, league: id },
-          update: {
-            $set: {
-              strokes: s.strokes,
-              status:  s.status,
-              capped:  s.capped,
-              lastUpdated: new Date()
-            }
+      const overrides = await Score.find(
+        { league: id, manualOverride: true },
+        { golferId: 1 }
+      ).lean();
+      const overriddenIds = new Set(overrides.map(o => o.golferId));
+    
+      const bulk = scores
+        .filter(s => !overriddenIds.has(s.golferId))
+        .map(s => ({
+          updateOne: {
+            filter: { golferId: s.golferId, league: id },
+            update: {
+              $set: {
+                strokes: s.strokes,
+                status:  s.status,
+                capped:  s.capped,
+                lastUpdated: new Date()
+              }
+            },
+            upsert: true,
           },
-          upsert: true,
-        },
-      }));
-      await Score.bulkWrite(bulk);
+        }));
+    
+      if (bulk.length > 0) await Score.bulkWrite(bulk);
     }
 
     res.status(200).json({ scores });

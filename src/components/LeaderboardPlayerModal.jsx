@@ -196,7 +196,7 @@ export default function LeaderboardPlayerModal({ golferId, golferName, tournamen
               </div>
               {cutPct !== null && (
                 <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">% Cuts</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cuts Made</p>
                   <p className={`text-lg font-bold ${cutPct >= 60 ? 'text-green-600' : cutPct >= 40 ? 'text-gray-700' : 'text-red-500'}`}>
                     {cutPct}%
                   </p>
