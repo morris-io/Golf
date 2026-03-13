@@ -280,7 +280,7 @@ export default function LeaderboardPlayerModal({ golferId, golferName, tournamen
                             ))}
                           </div>
                           <div className="flex gap-1">
-                            <div className="w-8 text-[10px] text-gray-400 font-medium text-center flex-shrink-0">Sc</div>
+                            <div className="w-8 text-[10px] text-gray-400 font-medium text-center pt-1 flex-shrink-0">Sc</div>
                             {currentRoundData.holes.map(h => (
                               <div key={h.number} style={{ width: 28 }} className="flex items-center justify-center flex-shrink-0">
                                 {h.displayValue != null ? (
