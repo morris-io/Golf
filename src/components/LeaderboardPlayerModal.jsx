@@ -70,14 +70,15 @@ function Avatar({ name }) {
 }
 
 export default function LeaderboardPlayerModal({ golferId, golferName, tournamentName, onClose }) {
-  const [profile, setProfile]         = useState(null);
-  const [news, setNews]               = useState([]);
-  const [rounds, setRounds]           = useState([]);
-  const [teeTime, setTeeTime]         = useState(null);
-  const [loading, setLoading]         = useState(true);
-  const [visible, setVisible]         = useState(false);
-  const [activeRound, setActiveRound] = useState(null);
-  const backdropRef                   = useRef(null);
+  const [profile, setProfile]                     = useState(null);
+  const [news, setNews]                           = useState([]);
+  const [rounds, setRounds]                       = useState([]);
+  const [teeTime, setTeeTime]                     = useState(null);
+  const [loading, setLoading]                     = useState(true);
+  const [visible, setVisible]                     = useState(false);
+  const [activeRound, setActiveRound]             = useState(null);
+  const [tournamentHistory, setTournamentHistory] = useState([]);
+  const backdropRef                               = useRef(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -97,7 +98,10 @@ export default function LeaderboardPlayerModal({ golferId, golferName, tournamen
       fetch(`${apiUrl}/api/golfers/${golferId}`).then(r => r.json()).catch(() => null),
       fetch(`${apiUrl}/api/news/golfer/${encodeURIComponent(golferName)}?${newsParams.toString()}`).then(r => r.json()).catch(() => null),
       fetch(`${apiUrl}/api/golfers/linescores/${golferId}`).then(r => r.json()).catch(() => null),
-    ]).then(([profileData, newsData, lsData]) => {
+      tournamentName
+        ? fetch(`${apiUrl}/api/golfers/tournament-history/${golferId}?tournament=${encodeURIComponent(tournamentName)}`).then(r => r.json()).catch(() => null)
+        : Promise.resolve(null),
+    ]).then(([profileData, newsData, lsData, histData]) => {
       setProfile(profileData ?? null);
       setNews(newsData?.articles ?? []);
       const fetchedRounds = lsData?.rounds ?? [];
@@ -105,6 +109,7 @@ export default function LeaderboardPlayerModal({ golferId, golferName, tournamen
       setTeeTime(lsData?.teeTime ?? null);
       const latestWithHoles = [...fetchedRounds].reverse().find(r => r.holes?.length > 0);
       if (latestWithHoles) setActiveRound(latestWithHoles.period);
+      setTournamentHistory(histData?.results ?? []);
     }).finally(() => setLoading(false));
   }, [golferId, golferName, tournamentName]);
 
@@ -191,7 +196,7 @@ export default function LeaderboardPlayerModal({ golferId, golferName, tournamen
               </div>
               {cutPct !== null && (
                 <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2 text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cuts Made</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">% Cuts</p>
                   <p className={`text-lg font-bold ${cutPct >= 60 ? 'text-green-600' : cutPct >= 40 ? 'text-gray-700' : 'text-red-500'}`}>
                     {cutPct}%
                   </p>
@@ -252,70 +257,69 @@ export default function LeaderboardPlayerModal({ golferId, golferName, tournamen
                       </button>
                     ))}
                   </div>
-                
-                    {/* Hole by hole grid */}
-                {currentRoundData?.holes?.length > 0 ? (
+
+                  {/* Hole by hole grid */}
+                  {currentRoundData?.holes?.length > 0 ? (
                     <div>
-                        <div className="overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                      <div className="overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                         <div style={{ minWidth: `${currentRoundData.holes.length * 34}px` }}>
-                            {/* Hole numbers */}
-                            <div className="flex gap-1 mb-1">
-                             <div className="w-8 text-[10px] text-gray-400 font-medium text-center flex-shrink-0">H</div>
-                              {currentRoundData.holes.map(h => (
-                               <div key={h.number} style={{ width: 28 }} className="text-[10px] text-gray-400 text-center font-medium flex-shrink-0">
-                                 {h.number}
-                               </div>
-                                 ))}
-                            </div>
-                         {/* Par */}
-                          <div className="flex gap-1 mb-0.5">
-                              <div className="w-8 text-[10px] text-gray-400 font-medium text-center flex-shrink-0">Par</div>
-                           {currentRoundData.holes.map(h => (
-                             <div key={h.number} style={{ width: 28 }} className="text-[10px] text-gray-500 text-center flex-shrink-0">
-                               {h.par ?? '—'}
-                             </div>
-                           ))}
+                          <div className="flex gap-1 mb-1">
+                            <div className="w-8 text-[10px] text-gray-400 font-medium text-center flex-shrink-0">H</div>
+                            {currentRoundData.holes.map(h => (
+                              <div key={h.number} style={{ width: 28 }} className="text-[10px] text-gray-400 text-center font-medium flex-shrink-0">
+                                {h.number}
+                              </div>
+                            ))}
                           </div>
-                         <div className="flex gap-1">
-                           <div className="w-8 text-[10px] text-gray-400 font-medium text-center flex-shrink-0">Sc</div>
-                           {currentRoundData.holes.map(h => (
+                          <div className="flex gap-1 mb-0.5">
+                            <div className="w-8 text-[10px] text-gray-400 font-medium text-center flex-shrink-0">Par</div>
+                            {currentRoundData.holes.map(h => (
+                              <div key={h.number} style={{ width: 28 }} className="text-[10px] text-gray-500 text-center flex-shrink-0">
+                                {h.par ?? '—'}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-1">
+                            <div className="w-8 text-[10px] text-gray-400 font-medium text-center flex-shrink-0">Sc</div>
+                            {currentRoundData.holes.map(h => (
                               <div key={h.number} style={{ width: 28 }} className="flex items-center justify-center flex-shrink-0">
-                                  {h.displayValue != null ? (
-                                    <span className={`w-6 h-6 flex items-center justify-center text-[11px] font-bold ${holeScoreColor(h.value, h.par)} ${holeScoreBorder(h.value, h.par)}`}>
-                                      {h.displayValue}
-                                   </span>
-                                  ) : (
-                                    <span className="text-[11px] text-gray-300">—</span>
-                                  )}
-                                </div>
-                                 ))}
-                             </div>
+                                {h.displayValue != null ? (
+                                  <span className={`w-6 h-6 flex items-center justify-center text-[11px] font-bold ${holeScoreColor(h.value, h.par)} ${holeScoreBorder(h.value, h.par)}`}>
+                                    {h.displayValue}
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] text-gray-300">—</span>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         </div>
+                      </div>
 
-                     <div className="flex gap-3 mt-3 justify-center flex-wrap">
-                       {[
+                      {/* Score legend */}
+                      <div className="flex gap-3 mt-3 justify-center flex-wrap">
+                        {[
                           { label: 'Eagle', cls: 'bg-blue-600 text-white rounded-full' },
-                         { label: 'Birdie', cls: 'bg-green-500 text-white rounded-full' },
+                          { label: 'Birdie', cls: 'bg-green-500 text-white rounded-full' },
                           { label: 'Par', cls: 'bg-gray-100 text-gray-700 rounded-sm' },
                           { label: 'Bogey', cls: 'bg-red-400 text-white rounded-sm' },
                           { label: 'Double+', cls: 'bg-red-700 text-white rounded-sm' },
-                         ].map(({ label, cls }) => (
-                            <div key={label} className="flex items-center gap-1">
-                              <span className={`w-4 h-4 inline-flex items-center justify-center text-[9px] font-bold ${cls}`} />
-                              <span className="text-[10px] text-gray-500">{label}</span>
-                            </div>
-                          ))}
-                        </div>
+                        ].map(({ label, cls }) => (
+                          <div key={label} className="flex items-center gap-1">
+                            <span className={`w-4 h-4 inline-flex items-center justify-center text-[9px] font-bold ${cls}`} />
+                            <span className="text-[10px] text-gray-500">{label}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    ) : (
-                     <p className="text-xs text-gray-400 text-center py-3 italic">
-                     No hole data available for this round yet
-                     </p>
-                    )}
+                  ) : (
+                    <p className="text-xs text-gray-400 text-center py-3 italic">
+                      No hole data available for this round yet
+                    </p>
+                  )}
                 </div>
               )}
-
+              {/* Latest News */}
               {news.length > 0 && (
                 <div className="mb-5">
                   <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
@@ -346,6 +350,51 @@ export default function LeaderboardPlayerModal({ golferId, golferName, tournamen
                 </div>
               )}
 
+              {/* Past results at this specific tournament */}
+              {tournamentHistory.length > 0 && (
+                <div className="mb-5">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                    Course History 
+                  </h3>
+                  <ul className="space-y-2">
+                    {tournamentHistory.map((r, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center justify-between py-3 px-4 rounded-xl bg-gray-50 border border-gray-100"
+                      >
+                        <div className="flex-1 min-w-0 pr-4">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{r.tournamentName}</p>
+
+                          {r.cut ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-block text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                                Missed Cut
+                              </span>
+                              {r.savedAt && (
+                                <span className="text-[10px] text-gray-400">{new Date(r.savedAt).getFullYear()}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400">
+                              {r.position ?? '—'}
+                              {r.savedAt && (
+                                <span className="ml-1.5">{new Date(r.savedAt).getFullYear()}</span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`text-base font-bold font-mono ${scoreColor(r.scoreToPar, r.cut)}`}>
+                          {formatScore(r.scoreToPar)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+
+
+              {/* Tournament History */}
               {results.length === 0 ? (
                 <div className="text-center py-10">
                   <p className="text-4xl mb-3">⛳</p>
@@ -367,21 +416,21 @@ export default function LeaderboardPlayerModal({ golferId, golferName, tournamen
                           <p className="text-sm font-semibold text-gray-800 truncate">{r.tournamentName}</p>
                           {r.cut ? (
                             <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="inline-block text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
-                                 Missed Cut
-                                 </span>
-                                {r.savedAt && (
-                                     <span className="text-[10px] text-gray-400">{new Date(r.savedAt).getFullYear()}</span>
-                               )}
-                             </div>
-                        ) : (
-                         <p className="text-xs text-gray-400 mt-0.5">
-                            {r.position ?? '—'}
-                            {r.savedAt && (
-                              <span className="ml-1.5">{new Date(r.savedAt).getFullYear()}</span>
-                            )}
-                          </p>
-                        )}
+                              <span className="inline-block text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                                Missed Cut
+                              </span>
+                              {r.savedAt && (
+                                <span className="text-[10px] text-gray-400">{new Date(r.savedAt).getFullYear()}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {r.position ?? '—'}
+                              {r.savedAt && (
+                                <span className="ml-1.5">{new Date(r.savedAt).getFullYear()}</span>
+                              )}
+                            </p>
+                          )}
                         </div>
                         <span className={`text-base font-bold font-mono ${scoreColor(r.scoreToPar, r.cut)}`}>
                           {formatScore(r.scoreToPar)}
