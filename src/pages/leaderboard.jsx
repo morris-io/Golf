@@ -92,7 +92,7 @@ export default function Leaderboard() {
 
     try {
       const resBoard = await fetch(
-        `${apiUrl}/api/leagues/${leagueId}/leaderboard`,
+        `${apiUrl}/api/leagues/${leagueId}/leaderboard?t=${Date.now()}`,
         { headers }
       );
       if (!resBoard.ok) {

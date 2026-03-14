@@ -84,7 +84,8 @@ async function handler(req, res) {
       };
     })
     .sort((a, b) => a.totalStrokes - b.totalStrokes);
-
+    
+    res.setHeader('Cache-Control', 'no-store')
     res.status(200).json({ standings });
   } catch (err) {
     console.error('Leaderboard Error:', err);
