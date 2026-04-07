@@ -74,13 +74,14 @@ function Avatar({ name }) {
 }
 
 export default function PlayerModal({ golferId, golferName, tournamentName, onClose }) {
-  const [profile, setProfile]   = useState(null);
-  const [odds, setOdds]         = useState(null);
-  const [oddsBook, setOddsBook] = useState(null);
-  const [news, setNews]         = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [visible, setVisible]   = useState(false);
-  const backdropRef             = useRef(null);
+  const [profile, setProfile]                     = useState(null);
+  const [tournamentHistory, setTournamentHistory] = useState([]); 
+  const [odds, setOdds]                           = useState(null);
+  const [oddsBook, setOddsBook]                   = useState(null);
+  const [news, setNews]                           = useState([]);
+  const [loading, setLoading]                     = useState(true);
+  const [visible, setVisible]                     = useState(false);
+  const backdropRef                               = useRef(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -100,8 +101,12 @@ export default function PlayerModal({ golferId, golferName, tournamentName, onCl
       fetch(`${apiUrl}/api/golfers/${golferId}`).then(r => r.json()).catch(() => null),
       fetch(`${apiUrl}/api/odds/golf`).then(r => r.json()).catch(() => null),
       fetch(`${apiUrl}/api/news/golfer/${encodeURIComponent(golferName)}?${newsParams.toString()}`).then(r => r.json()).catch(() => null),
-    ]).then(([profileData, oddsData, newsData]) => {
+      tournamentName
+        ? fetch(`${apiUrl}/api/golfers/tournament-history/${golferId}?tournament=${encodeURIComponent(tournamentName)}`).then(r => r.json()).catch(() => null)
+        : Promise.resolve(null),
+    ]).then(([profileData, oddsData, newsData, histData]) => {
       setProfile(profileData ?? null);
+      setTournamentHistory(histData?.results ?? []); 
       if (oddsData?.odds) {
         setOdds(findOdds(golferName, oddsData.odds));
         setOddsBook(oddsData.bookmaker ?? null);
@@ -258,6 +263,47 @@ export default function PlayerModal({ golferId, golferName, tournamentName, onCl
                 </div>
               )}
 
+              {/* Course History Section - Matches Leaderboard reference */}
+              {tournamentHistory.length > 0 && (
+                <div className="mb-5">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                    Course History 
+                  </h3>
+                  <ul className="space-y-2">
+                    {tournamentHistory.map((r, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center justify-between py-3 px-4 rounded-xl bg-gray-50 border border-gray-100"
+                      >
+                        <div className="flex-1 min-w-0 pr-4">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{r.tournamentName}</p>
+                          {r.cut ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-block text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                                Missed Cut
+                              </span>
+                              {r.savedAt && (
+                                <span className="text-[10px] text-gray-400">{new Date(r.savedAt).getFullYear()}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400">
+                              {r.position ?? '—'}
+                              {r.savedAt && (
+                                <span className="ml-1.5">{new Date(r.savedAt).getFullYear()}</span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`text-base font-bold font-mono ${scoreColor(r.scoreToPar, r.cut)}`}>
+                          {formatScore(r.scoreToPar)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {results.length === 0 ? (
                 <div className="text-center py-16">
                   <p className="text-4xl mb-3">⛳</p>
@@ -280,11 +326,21 @@ export default function PlayerModal({ golferId, golferName, tournamentName, onCl
                             {r.tournamentName}
                           </p>
                           {r.cut ? (
-                            <span className="inline-block mt-0.5 text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
-                              Missed Cut
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="inline-block text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                                Missed Cut
+                              </span>
+                              {r.savedAt && (
+                                <span className="text-[10px] text-gray-400">{new Date(r.savedAt).getFullYear()}</span>
+                              )}
+                            </div>
                           ) : (
-                            <p className="text-xs text-gray-400 mt-0.5">{r.position ?? '—'}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {r.position ?? '—'}
+                              {r.savedAt && (
+                                <span className="ml-1.5">{new Date(r.savedAt).getFullYear()}</span>
+                              )}
+                            </p>
                           )}
                         </div>
                         <span className={`text-base font-bold font-mono ${scoreColor(r.scoreToPar, r.cut)}`}>

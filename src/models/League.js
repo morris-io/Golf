@@ -15,6 +15,8 @@ const LeagueSchema = new mongoose.Schema({
     golferName: String,
     pickNo: Number
   }],
+  draftStarted: { type: Boolean, default: false },
+  lastPickAt: { type: Date },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

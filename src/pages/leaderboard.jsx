@@ -92,7 +92,7 @@ export default function Leaderboard() {
 
     try {
       const resBoard = await fetch(
-        `${apiUrl}/api/leagues/${leagueId}/leaderboard?t=${Date.now()}`,
+        `${apiUrl}/api/leagues/${leagueId}/leaderboard`,
         { headers }
       );
       if (!resBoard.ok) {
@@ -137,7 +137,6 @@ export default function Leaderboard() {
     };
   }, [leagueId]);
 
-  // currentLeague fallback — works whether user navigates directly or via league selector
   useEffect(() => {
     if (!leagueId) return;
 

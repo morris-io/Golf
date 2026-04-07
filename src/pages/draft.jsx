@@ -62,6 +62,8 @@ export default function Draft() {
   const [error,         setError]         = useState('');
   const [selectedGolfer, setSelectedGolfer] = useState(null);
   const [ready,         setReady]         = useState(false);
+  
+  const [timeLeft,      setTimeLeft]      = useState(180); 
 
   const pollRef = useRef(null);
 
@@ -91,7 +93,13 @@ export default function Draft() {
 
   const available = useMemo(() => {
     const picked = new Set(picks.map(p => String(p.golfer)));
-    return field.filter(g => !picked.has(g.id));
+    return field
+    .filter(g => !picked.has(g.id))
+    .sort((a, b) => {
+      const rankA = a.rank || 999;
+      const rankB = b.rank || 999;
+      return rankA - rankB;
+    });
   }, [field, picks]);
 
   const filtered = useMemo(
@@ -172,6 +180,7 @@ export default function Draft() {
   };
 
   const makePick = async (golferId, golferName) => {
+    if (loadingPick) return;
     setLoadingPick(true);
     try {
       const res  = await fetch(
@@ -182,12 +191,47 @@ export default function Draft() {
       if (!res.ok) throw new Error(data.msg || 'Pick failed');
       setPicks(data.picks);
       setOrder(data.draftOrder);
+      setTimeLeft(180);
+      fetchLeague(); 
     } catch (err) {
       setError(err.message);
     } finally {
       setLoadingPick(false);
     }
   };
+
+  const startDraft = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/api/leagues/${leagueId}/start-draft`, { 
+        method: 'POST', 
+        headers 
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.msg || 'Failed to start draft');
+      fetchLeague();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (!leagueDetails?.draftStarted || isComplete || !leagueDetails?.lastPickAt) return;
+
+    const timer = setInterval(() => {
+      const start = new Date(leagueDetails.lastPickAt).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - start) / 1000);
+      const remaining = Math.max(0, 180 - elapsed);
+      
+      setTimeLeft(remaining);
+      if (remaining === 0) {
+        fetchDraft(); 
+        fetchLeague();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [leagueDetails?.lastPickAt, leagueDetails?.draftStarted, picks.length, available, order, userId, loadingPick]);
 
   useEffect(() => {
     if (!leagueId) return;
@@ -197,7 +241,10 @@ export default function Draft() {
       .finally(() => setReady(true));
 
     const startPolling = () => {
-      if (!pollRef.current) pollRef.current = setInterval(fetchDraft, 10_000);
+      if (!pollRef.current) pollRef.current = setInterval(() => {
+        fetchDraft();
+        fetchLeague();
+      }, 10_000);
     };
     const stopPolling = () => {
       if (pollRef.current) {
@@ -310,6 +357,28 @@ export default function Draft() {
             </div>
           </div>
 
+          {/* Admin Start Button & Timer UI */}
+          <div className="mb-6">
+            {userId === String(leagueDetails?.admin) && !leagueDetails?.draftStarted && (
+              <button 
+                onClick={startDraft} 
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02]"
+              >
+                START DRAFT
+              </button>
+            )}
+
+            {leagueDetails?.draftStarted && !isComplete && (
+              <div className="text-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Pick Timer</p>
+                <p className={`text-4xl font-mono font-black ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-gray-800'}`}>
+                  {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-1">Automatically picks best available at 0:00</p>
+              </div>
+            )}
+          </div>
+
           <div>
             <h2 className="text-med font-semibold mb-2">Results</h2>
             {picks.length === 0 ? (
@@ -343,16 +412,16 @@ export default function Draft() {
             <li
               key={idx}
               className={`min-w-[4rem] max-w-[6rem] py-2 px-3 text-center rounded-lg ${
-                idx === 0 ? 'bg-green-200' : 'bg-gray-100'
+                idx === 0 ? 'bg-green-200 ring-green-500' : 'bg-gray-100'
               }`}
             >
-              <span className="block overflow-hidden whitespace-nowrap text-sm">{userMap[uid] || uid}</span>
+              <span className="block overflow-hidden whitespace-nowrap text-sm font-bold">{userMap[uid] || uid}</span>
             </li>
               ))}
             </ul>
           </div>
 
-          <div>
+          <div className="mt-4">
             <h2 className="text-med font-semibold mb-2 mt-2">Available Golfers</h2>
 
             <input
@@ -364,18 +433,19 @@ export default function Draft() {
             />
 
             {filtered.length === 0 ? (
-              <p className="text-gray-500">There is no PGA Tournament this weekend</p>
+              <p className="text-gray-500 text-center py-4">No golfers found.</p>
             ) : (
               <ul className="space-y-4">
                 {filtered.map(g => (
                   <li
                     key={g.id}
-                    className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3 shadow"
+                    className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3 shadow border-l-2 border-green-500"
                   >
                     <button
                       onClick={() => setSelectedGolfer({ id: g.id, name: g.name })}
-                      className="font-medium text-gray-800 text-left hover:text-green-700 transition-colors"
+                      className="font-medium text-gray-800 text-left hover:text-green-700 transition-colors flex items-center"
                     >
+                      <span className="text-xs text-gray-400 font-mono mr-3">#{g.rank || 'NR'}</span>
                       {g.name}
                     </button>
 
@@ -383,12 +453,13 @@ export default function Draft() {
                       onClick={() => makePick(g.id, g.name)}
                       disabled={
                         !leagueReady || 
+                        !leagueDetails?.draftStarted ||
                         loadingPick || 
                         String(order[picks.length]) !== String(userId) 
                       }
                       className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-                        leagueReady && String(order[picks.length]) === String(userId)
-                          ? 'bg-green-500 hover:bg-green-600 text-white'
+                        leagueReady && leagueDetails?.draftStarted && String(order[picks.length]) === String(userId)
+                          ? 'bg-green-500 hover:bg-green-600 text-white shadow-md'
                           : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       }`}
                     >

@@ -15,7 +15,7 @@ async function handler(req, res) {
     const league = await League.findById(id);
     if (!league) return res.status(404).json({ msg: 'League not found' });
 
-    const maxPicks = league.members.length * 6;
+    const maxPicks = league.members.length * 4;
     const isLeagueFull = league.members.length >= (league.teamCount || 0);
 
     if (isLeagueFull && (!league.draftOrder || league.draftOrder.length < maxPicks)) {
@@ -25,7 +25,7 @@ async function handler(req, res) {
         [memberIds[i], memberIds[j]] = [memberIds[j], memberIds[i]];
       }
       let fullOrder = [];
-      for (let round = 0; round < 6; round++) {
+      for (let round = 0; round < 4; round++) {
         const roundOrder = round % 2 === 0 ? [...memberIds] : [...memberIds].reverse();
         fullOrder = fullOrder.concat(roundOrder);
       }
@@ -37,6 +37,10 @@ async function handler(req, res) {
     
       const fresh = await League.findById(league._id);
       league.draftOrder = fresh.draftOrder;
+    }
+
+    if (!league.draftStarted) {
+      return res.status(403).json({ msg: 'The draft has not been started by the admin yet.' });
     }
 
     const pickIndex = league.picks.length;
@@ -58,6 +62,8 @@ async function handler(req, res) {
       pickNo: pickIndex + 1
     });
 
+    league.lastPickAt = new Date();
+
     await league.save();
 
     res.status(200).json({
@@ -67,7 +73,8 @@ async function handler(req, res) {
         golferName: p.golferName,
         pickNo: p.pickNo
       })),
-      draftOrder: league.draftOrder
+      draftOrder: league.draftOrder,
+      lastPickAt: league.lastPickAt 
     });
   } catch (err) {
     res.status(500).json({ msg: 'Server error' });

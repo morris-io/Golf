@@ -7,6 +7,7 @@ const GolferSchema = new mongoose.Schema({
   displayName: { type: String, required: true },
   countryAbbreviation: { type: String, default: null },
   stateAbbreviation:   { type: String, default: null },
+  rank: { type: Number, default: 999 },
 }, { timestamps: true });
 
 export default mongoose.models.Golfer || mongoose.model('Golfer', GolferSchema);
