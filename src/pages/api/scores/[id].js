@@ -63,14 +63,18 @@ async function handler(req, res) {
         if (typeof rawCut === 'number') {
           const missedCutOrWd = statusName === 'STATUS_CUT' || statusName === 'STATUS_WD';
 
-          if (missedCutOrWd || (toPar !== null && toPar > rawCut)) {
+          if (missedCutOrWd && toPar !== null && toPar > rawCut) {
             finalStrokes = rawCut;
             capped = true;
+          } else {
+            finalStrokes = toPar;
+            capped = false;
           }
         }
 
         return { golferId: gid, strokes: finalStrokes, status: statusName, capped };
       });
+    
 
       if (event?.status?.type?.name === 'STATUS_FINAL') {
         const host     = req.headers.host;
