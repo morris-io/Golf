@@ -357,6 +357,51 @@ export default function Draft() {
             </div>
           </div>
 
+          {/* --- WAITING ROOM / MEMBERS LIST --- */}
+          {!leagueDetails?.draftStarted && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Waiting Room
+                </h3>
+                <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                  {leagueDetails?.members?.length} / {leagueDetails?.teamCount} Joined
+                </span>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {leagueDetails?.members?.map((member, idx) => {
+                  const mId = (member._id || member).toString();
+                  const isMe = mId === userId;
+                  const isAdmin = mId === String(leagueDetails?.admin);
+                  const username = member.username || userMap[mId] || 'Player';
+                  
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${
+                        isMe ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${isMe ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                      <span className={`text-sm font-medium ${isMe ? 'text-green-800' : 'text-gray-700'}`}>
+                        {username}
+                      </span>
+                      {isAdmin && <span className="text-[10px] text-yellow-600">👑</span>}
+                    </div>
+                  );
+                })}
+                
+                {/* Visualizing Empty Slots */}
+                {Array.from({ length: Math.max(0, (leagueDetails?.teamCount || 0) - (leagueDetails?.members?.length || 0)) }).map((_, i) => (
+                  <div key={`empty-${i}`} className="px-3 py-1.5 rounded-full border border-gray-100 bg-gray-50/50 flex items-center">
+                    <span className="text-xs text-gray-300 italic">Waiting...</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Admin Start Button & Timer UI */}
           <div className="mb-6">
             {userId === String(leagueDetails?.admin) && !leagueDetails?.draftStarted && (
