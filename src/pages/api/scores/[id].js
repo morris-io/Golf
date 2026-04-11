@@ -63,9 +63,13 @@ async function handler(req, res) {
         if (typeof rawCut === 'number') {
           const missedCutOrWd = statusName === 'STATUS_CUT' || statusName === 'STATUS_WD';
 
+<<<<<<< HEAD
           // Cap the score at the cutline if they missed the cut/WD, 
           // OR if they made the cut but are currently shooting worse than the cutline.
           if (missedCutOrWd || (toPar !== null && toPar > rawCut)) {
+=======
+          if (missedCutOrWd && toPar !== null && toPar > rawCut) {
+>>>>>>> 1a19f3112fb6e317808ad35924b71b52da9da96e
             finalStrokes = rawCut;
             capped = true;
           } else {
