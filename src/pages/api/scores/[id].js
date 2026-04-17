@@ -38,6 +38,8 @@ async function handler(req, res) {
       const tournament   = event?.tournament;
 
       const rawCut = tournament?.cutScore;
+      
+      const cutHasOccurred = comps.some(cmp => cmp.status?.type?.name === 'STATUS_CUT');
 
       scores = golferIds.map(gid => {
         const c = comps.find(cmp => cmp.athlete.id.toString() === gid.toString());
@@ -63,9 +65,7 @@ async function handler(req, res) {
         if (typeof rawCut === 'number') {
           const missedCutOrWd = statusName === 'STATUS_CUT' || statusName === 'STATUS_WD';
 
-          // Cap the score at the cutline if they missed the cut/WD, 
-          // OR if they made the cut but are currently shooting worse than the cutline.
-          if (missedCutOrWd || (toPar !== null && toPar > rawCut)) {
+          if (missedCutOrWd || (cutHasOccurred && toPar !== null && toPar > rawCut)) {
             finalStrokes = rawCut;
             capped = true;
           } else {
