@@ -17,7 +17,8 @@ const LeagueSchema = new mongoose.Schema({
   }],
   draftStarted: { type: Boolean, default: false },
   lastPickAt: { type: Date },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  scheduledDraftTime: { type: Date, default: null },
 }, { timestamps: true });
 
 export default mongoose.models.League || mongoose.model('League', LeagueSchema);

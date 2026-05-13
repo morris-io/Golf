@@ -65,6 +65,10 @@ export default function Draft() {
   
   const [timeLeft,      setTimeLeft]      = useState(180); 
 
+  const [scheduledTime, setScheduledTime]   = useState('');
+  const [showScheduler, setShowScheduler]   = useState(false);
+  const [scheduleError, setScheduleError]   = useState('');
+
   const pollRef = useRef(null);
 
   const token   = typeof window !== 'undefined' && localStorage.getItem('token');
@@ -143,6 +147,13 @@ export default function Draft() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Fetch league failed');
       setLeagueDetails(data.league);
+      if (data.league?.scheduledDraftTime) {
+        // Convert to local datetime-local format
+        const d = new Date(data.league.scheduledDraftTime);
+        const pad = n => String(n).padStart(2, '0');
+        const local = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        setScheduledTime(local);
+      }
     } catch (err) {
       setError(err.message);
     }
@@ -403,26 +414,113 @@ export default function Draft() {
           )}
 
           {/* Admin Start Button & Timer UI */}
-          <div className="mb-6">
-            {userId === String(leagueDetails?.admin) && !leagueDetails?.draftStarted && (
-              <button 
-                onClick={startDraft} 
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02]"
-              >
-                START DRAFT
-              </button>
-            )}
+          {/* Admin controls */}
+{userId === String(leagueDetails?.admin) && !leagueDetails?.draftStarted && (
+  <div className="space-y-3">
+    <div className="flex gap-3">
+      <button
+        onClick={startDraft}
+        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02]"
+      >
+        START DRAFT
+      </button>
+      <button
+        onClick={() => setShowScheduler(s => !s)}
+        className="px-4 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl shadow transition"
+        title="Schedule draft time"
+      >
+        🗓
+      </button>
+    </div>
 
-            {leagueDetails?.draftStarted && !isComplete && (
-              <div className="text-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Pick Timer</p>
-                <p className={`text-4xl font-mono font-black ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-gray-800'}`}>
-                  {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-                </p>
-                <p className="text-[10px] text-gray-400 mt-1">Automatically picks best available at 0:00</p>
-              </div>
-            )}
-          </div>
+    {showScheduler && (
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+          Schedule Draft Time
+        </p>
+        <input
+          type="datetime-local"
+          value={scheduledTime}
+          onChange={e => setScheduledTime(e.target.value)}
+          className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+        />
+        {scheduleError && (
+          <p className="text-red-500 text-xs">{scheduleError}</p>
+        )}
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              setScheduleError('');
+              try {
+                const res = await fetch(
+                  `${apiUrl}/api/leagues/${leagueId}/schedule`,
+                  {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ scheduledDraftTime: scheduledTime || null }),
+                  }
+                );
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.msg);
+                fetchLeague();
+                setShowScheduler(false);
+              } catch (err) {
+                setScheduleError(err.message);
+              }
+            }}
+            className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition"
+          >
+            Save
+          </button>
+          <button
+            onClick={async () => {
+              setScheduleError('');
+              setScheduledTime('');
+              await fetch(`${apiUrl}/api/leagues/${leagueId}/schedule`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ scheduledDraftTime: null }),
+              });
+              fetchLeague();
+              setShowScheduler(false);
+            }}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-lg text-sm font-semibold transition"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
+
+{/* Scheduled time display — visible to all members */}
+          {!leagueDetails?.draftStarted && leagueDetails?.scheduledDraftTime && (
+            <div className="text-center p-3 bg-green-50 border border-green-200 rounded-xl">
+              <p className="text-xs text-green-600 font-bold uppercase tracking-widest mb-1">
+                Draft Scheduled For
+              </p>
+              <p className="text-lg font-bold text-green-800">
+                {new Date(leagueDetails.scheduledDraftTime).toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </p>
+            </div>
+          )}
+
+          {leagueDetails?.draftStarted && !isComplete && (
+            <div className="text-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Pick Timer</p>
+              <p className={`text-4xl font-mono font-black ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-gray-800'}`}>
+                {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-1">Automatically picks best available at 0:00</p>
+            </div>
+          )}
 
           <div>
             <h2 className="text-med font-semibold mb-2">Results</h2>
@@ -483,35 +581,36 @@ export default function Draft() {
               <ul className="space-y-4">
                 {filtered.map(g => (
                   <li
-                    key={g.id}
-                    className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3 shadow border-l-2 border-green-500"
+                  key={g.id}
+                  onClick={() => setSelectedGolfer({ id: g.id, name: g.name })}
+                  className="flex justify-between items-center bg-gray-50 rounded-xl px-5 py-3 shadow border-l-2 border-green-500 cursor-pointer hover:bg-green-50 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <span className="text-xs text-gray-400 font-mono mr-3">#{g.rank || 'NR'}</span>
+                    <span className="font-medium text-gray-800">{g.name}</span>
+                  </div>
+              
+                  <button
+                    onClick={e => {
+                      e.stopPropagation(); // prevent modal from opening
+                      makePick(g.id, g.name);
+                    }}
+                    disabled={
+                      !leagueReady ||
+                      !leagueDetails?.draftStarted ||
+                      loadingPick ||
+                      String(order[picks.length]) !== String(userId)
+                    }
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                      leagueReady && leagueDetails?.draftStarted && String(order[picks.length]) === String(userId)
+                        ? 'bg-green-500 hover:bg-green-600 text-white shadow-md'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
                   >
-                    <button
-                      onClick={() => setSelectedGolfer({ id: g.id, name: g.name })}
-                      className="font-medium text-gray-800 text-left hover:text-green-700 transition-colors flex items-center"
-                    >
-                      <span className="text-xs text-gray-400 font-mono mr-3">#{g.rank || 'NR'}</span>
-                      {g.name}
-                    </button>
-
-                    <button
-                      onClick={() => makePick(g.id, g.name)}
-                      disabled={
-                        !leagueReady || 
-                        !leagueDetails?.draftStarted ||
-                        loadingPick || 
-                        String(order[picks.length]) !== String(userId) 
-                      }
-                      className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-                        leagueReady && leagueDetails?.draftStarted && String(order[picks.length]) === String(userId)
-                          ? 'bg-green-500 hover:bg-green-600 text-white shadow-md'
-                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
-                      {loadingPick ? 'Picking…' : 'Pick'}
-                    </button>
-                  </li>
-                ))}
+                    {loadingPick ? 'Picking…' : 'Pick'}
+                  </button>
+                </li>
+              ))}
               </ul>
             )}
           </div>
