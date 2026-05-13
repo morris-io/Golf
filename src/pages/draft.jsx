@@ -527,7 +527,7 @@ export default function Draft() {
             {picks.length === 0 ? (
               <p className="text-gray-500 text-center">No picks yet.</p>
             ) : (
-              <ul className="flex space-x-3 overflow-x-auto px-1">
+              <ul className="flex space-x-3 overflow-x-auto px-1 no-scrollbar">
                 {picks
                   .slice()
                   .reverse()
@@ -550,7 +550,7 @@ export default function Draft() {
 
           <div>
             <h2 className="text-med font-semibold mb-2 mt-2">Upcoming Picks</h2>
-            <ul className="flex space-x-3 overflow-x-auto px-1">
+            <ul className="flex space-x-3 overflow-x-auto px-1 no-scrollbar">
               {upcoming.map((uid, idx) => (
             <li
               key={idx}
