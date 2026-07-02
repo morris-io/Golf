@@ -51,7 +51,7 @@ export default function Layout({ children }) {
       </Head>
 
       <div
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat md:!bg-[url('/images/bg-desktop.jpeg')]"
         style={{ backgroundImage: bgImage }}
       />
 

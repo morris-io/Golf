@@ -523,7 +523,7 @@ export default function Draft() {
           )}
 
           <div>
-            <h2 className="text-med font-semibold mb-2">Results</h2>
+            <h2 className="pt-4 text-med font-semibold mb-2">Results</h2>
             {picks.length === 0 ? (
               <p className="text-gray-500 text-center">No picks yet.</p>
             ) : (
